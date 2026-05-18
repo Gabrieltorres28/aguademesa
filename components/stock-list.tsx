@@ -7,17 +7,19 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import { productos } from "@/lib/data"
+import { createStockItemAction, updateStockItemAction } from "@/lib/actions/stock"
+import type { StockItem } from "@/lib/types"
 
-export function StockList() {
+export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
   const [searchTerm, setSearchTerm] = useState("")
   
-  const filteredProductos = productos.filter(p => 
-    p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProductos = stockItems.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
   
-  const productosCriticos = productos.filter(p => p.estado === 'critico')
-  const productosBajos = productos.filter(p => p.estado === 'bajo')
+  const getEstado = (p: StockItem) => p.current_stock <= p.min_stock ? "critico" : p.current_stock <= p.min_stock * 1.5 ? "bajo" : "normal"
+  const productosCriticos = stockItems.filter(p => getEstado(p) === 'critico')
+  const productosBajos = stockItems.filter(p => getEstado(p) === 'bajo')
   
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -37,12 +39,12 @@ export function StockList() {
                 <p className="font-medium text-foreground">Atención al stock</p>
                 {productosCriticos.length > 0 && (
                   <p className="text-sm text-destructive mt-1">
-                    <strong>Crítico:</strong> {productosCriticos.map(p => p.nombre).join(', ')}
+                    <strong>Crítico:</strong> {productosCriticos.map(p => p.name).join(', ')}
                   </p>
                 )}
                 {productosBajos.length > 0 && (
                   <p className="text-sm text-warning mt-1">
-                    <strong>Bajo:</strong> {productosBajos.map(p => p.nombre).join(', ')}
+                    <strong>Bajo:</strong> {productosBajos.map(p => p.name).join(', ')}
                   </p>
                 )}
               </div>
@@ -58,7 +60,7 @@ export function StockList() {
             <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-1">
               <Check className="h-4 w-4 text-success" />
             </div>
-            <p className="text-lg font-bold">{productos.filter(p => p.estado === 'normal').length}</p>
+            <p className="text-lg font-bold">{stockItems.filter(p => getEstado(p) === 'normal').length}</p>
             <p className="text-xs text-muted-foreground">Normal</p>
           </CardContent>
         </Card>
@@ -98,17 +100,34 @@ export function StockList() {
         {filteredProductos.map((producto) => (
           <ProductoCard key={producto.id} producto={producto} />
         ))}
+        {filteredProductos.length === 0 && (
+          <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">No hay stock cargado.</CardContent></Card>
+        )}
       </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Nuevo item de stock</CardTitle></CardHeader>
+        <CardContent>
+          <form action={createStockItemAction} className="grid gap-3 md:grid-cols-5">
+            <Input name="name" placeholder="Nombre" required />
+            <Input name="category" placeholder="Categoría" required />
+            <Input name="current_stock" type="number" placeholder="Stock" required />
+            <Input name="min_stock" type="number" placeholder="Mínimo" required />
+            <Button type="submit">Crear</Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
 
 interface ProductoCardProps {
-  producto: typeof productos[0]
+  producto: StockItem
 }
 
 function ProductoCard({ producto }: ProductoCardProps) {
-  const porcentaje = Math.min((producto.stockActual / (producto.stockMinimo * 3)) * 100, 100)
+  const porcentaje = Math.min((producto.current_stock / Math.max(producto.min_stock * 3, 1)) * 100, 100)
+  const estado = producto.current_stock <= producto.min_stock ? "critico" : producto.current_stock <= producto.min_stock * 1.5 ? "bajo" : "normal"
   
   const estadoColors = {
     normal: { badge: 'default', progress: 'bg-success' },
@@ -125,35 +144,40 @@ function ProductoCard({ producto }: ProductoCardProps) {
               <Package className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold">{producto.nombre}</h3>
+              <h3 className="font-semibold">{producto.name}</h3>
               <p className="text-xs text-muted-foreground">
-                Mínimo: {producto.stockMinimo} {producto.unidad}
+                Mínimo: {producto.min_stock} {producto.unit}
               </p>
             </div>
           </div>
           <Badge 
-            variant={estadoColors[producto.estado].badge as 'default' | 'secondary' | 'destructive'}
+            variant={estadoColors[estado].badge as 'default' | 'secondary' | 'destructive'}
             className="shrink-0"
           >
-            {producto.estado === 'normal' ? 'Normal' : 
-             producto.estado === 'bajo' ? 'Bajo' : 'Crítico'}
+            {estado === 'normal' ? 'Normal' : estado === 'bajo' ? 'Bajo' : 'Crítico'}
           </Badge>
         </div>
         
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Stock actual</span>
-            <span className="font-bold text-lg">{producto.stockActual} {producto.unidad}</span>
+            <span className="font-bold text-lg">{producto.current_stock} {producto.unit}</span>
           </div>
           
           <div className="relative">
             <Progress value={porcentaje} className="h-2" />
             <div 
-              className={`absolute top-0 left-0 h-2 rounded-full transition-all ${estadoColors[producto.estado].progress}`}
+              className={`absolute top-0 left-0 h-2 rounded-full transition-all ${estadoColors[estado].progress}`}
               style={{ width: `${porcentaje}%` }}
             />
           </div>
         </div>
+        <form action={updateStockItemAction} className="mt-3 grid grid-cols-[1fr_1fr_auto] gap-2">
+          <input type="hidden" name="id" value={producto.id} />
+          <Input name="current_stock" type="number" defaultValue={producto.current_stock} aria-label="Stock actual" />
+          <Input name="min_stock" type="number" defaultValue={producto.min_stock} aria-label="Stock mínimo" />
+          <Button type="submit" variant="outline">Editar</Button>
+        </form>
       </CardContent>
     </Card>
   )

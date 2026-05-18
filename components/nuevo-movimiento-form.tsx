@@ -32,7 +32,7 @@ export function NuevoMovimientoForm() {
     e.preventDefault()
     setIsSubmitting(true)
     
-    // Simular guardado
+    // Guardado local de transición; la carga real se realiza desde Caja.
     await new Promise(resolve => setTimeout(resolve, 800))
     
     setShowSuccess(true)

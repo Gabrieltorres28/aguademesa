@@ -8,7 +8,7 @@ import {
   Package,
   Receipt,
   Plus,
-  Truck,
+  Factory,
   BarChart3,
   ArrowRight,
   Clock
@@ -17,12 +17,12 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { getEstadisticasDiarias, formatCurrency, repartos, clientes } from "@/lib/data"
+import { formatCurrency } from "@/lib/data"
+import type { DashboardData } from "@/lib/actions/dashboard"
 
-export function Dashboard() {
-  const stats = getEstadisticasDiarias()
-  const ultimosRepartos = repartos.slice(0, 3)
-  const clientesConPendientes = clientes.filter(c => c.bidonesEnCalle > 20)
+export function Dashboard({ dashboard }: { dashboard: DashboardData }) {
+  const ultimosLlenados = dashboard.ultimosLlenados.slice(0, 3)
+  const hasPending = dashboard.pendientesMarcas + dashboard.pendientesClientes > 0
   
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -32,16 +32,16 @@ export function Dashboard() {
         <p className="text-sm text-muted-foreground">18 de mayo de 2026</p>
       </div>
       
-      {/* Alerta de bidones pendientes */}
-      {clientesConPendientes.length > 0 && (
+      {/* Alerta de cuentas por servicio */}
+      {hasPending && (
         <Card className="border-warning/50 bg-warning/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="font-medium text-foreground">Bidones pendientes de devolución</p>
+                <p className="font-medium text-foreground">Llenados pendientes de cobro</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {clientesConPendientes.map(c => c.nombre).join(', ')} tienen más de 20 bidones en calle
+                  Hay saldos pendientes por llenados o repartos propios.
                 </p>
               </div>
             </div>
@@ -52,52 +52,64 @@ export function Dashboard() {
       {/* Tarjetas de resumen */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <StatCard 
-          title="Ventas del día"
-          value={formatCurrency(stats.ventasDelDia)}
-          icon={DollarSign}
-          variant="primary"
-        />
-        <StatCard 
-          title="Bidones hoy"
-          value={stats.bidonesEntregadosHoy.toString()}
+          title="Llenados hoy"
+          value={dashboard.bidonesLlenadosHoy.toString()}
           icon={Droplets}
           variant="accent"
         />
         <StatCard 
-          title="En calle"
-          value={stats.bidonesEnCalle.toString()}
-          icon={Truck}
+          title="Pendiente llenados"
+          value={formatCurrency(dashboard.pendientesMarcas)}
+          icon={Receipt}
           variant="warning"
         />
         <StatCard 
-          title="Por cobrar"
-          value={formatCurrency(stats.cuentasACobrar)}
-          icon={Receipt}
-          variant="default"
+          title="Revendedores"
+          value="--"
+          icon={Factory}
+          variant="primary"
+        />
+        <StatCard 
+          title="Producción día"
+          value={dashboard.bidonesLlenadosHoy.toString()}
+          icon={BarChart3}
+          variant="success"
+        />
+        <StatCard 
+          title="Ingresos llenado"
+          value={formatCurrency(dashboard.ingresosHoy)}
+          icon={DollarSign}
+          variant="primary"
         />
         <StatCard 
           title="Gastos mes"
-          value={formatCurrency(stats.gastosDelMes)}
+          value={formatCurrency(dashboard.gastosMes)}
           icon={TrendingUp}
           variant="destructive"
         />
         <StatCard 
-          title="Stock bidones"
-          value={stats.stockDisponible.toString()}
+          title="Stock crítico"
+          value={dashboard.stockCritico.toString()}
           icon={Package}
-          variant="success"
+          variant={dashboard.stockCritico > 0 ? "destructive" : "success"}
+        />
+        <StatCard 
+          title="Ctas. a cobrar"
+          value={formatCurrency(dashboard.pendientesClientes)}
+          icon={Receipt}
+          variant="warning"
         />
       </div>
       
       {/* Accesos rápidos */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Link href="/repartos/nuevo">
+        <Link href="/llenados/nuevo">
           <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
             <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Plus className="h-6 w-6 text-primary" />
               </div>
-              <span className="font-medium text-sm">Nuevo reparto</span>
+              <span className="font-medium text-sm">Nuevo llenado</span>
             </CardContent>
           </Card>
         </Link>
@@ -111,13 +123,13 @@ export function Dashboard() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/reportes">
+        <Link href="/repartos/nuevo">
           <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
             <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
               <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
-                <BarChart3 className="h-6 w-6 text-success" />
+                <Factory className="h-6 w-6 text-success" />
               </div>
-              <span className="font-medium text-sm">Ver reportes</span>
+              <span className="font-medium text-sm">Nuevo reparto</span>
             </CardContent>
           </Card>
         </Link>
@@ -137,8 +149,8 @@ export function Dashboard() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Últimos repartos</CardTitle>
-            <Link href="/repartos">
+            <CardTitle className="text-base font-semibold">Últimos llenados</CardTitle>
+            <Link href="/llenados">
               <Button variant="ghost" size="sm" className="text-xs">
                 Ver todos <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
@@ -146,36 +158,36 @@ export function Dashboard() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {ultimosRepartos.map((reparto) => (
+          {ultimosLlenados.map((llenado) => (
             <div 
-              key={reparto.id} 
-              className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+              key={llenado.id} 
+              className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Truck className="h-5 w-5 text-primary" />
+                  <Droplets className="h-5 w-5 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium text-sm">{reparto.cliente}</p>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm break-words">{llenado.brands?.name || "Sin marca"}</p>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    <span>{reparto.repartidor}</span>
+                    <span>{llenado.filling_date}</span>
                     <span>•</span>
-                    <span>{reparto.bidonesEntregados} bidones</span>
+                    <span>{llenado.filled_qty} llenados</span>
                   </div>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-semibold text-sm">{formatCurrency(reparto.montoTotal)}</p>
+              <div className="text-left min-[420px]:text-right">
+                <p className="font-semibold text-sm">{formatCurrency(Number(llenado.total_amount))}</p>
                 <Badge 
                   variant={
-                    reparto.estado === 'cobrado' ? 'default' : 
-                    reparto.estado === 'parcial' ? 'secondary' : 'outline'
+                    llenado.payment_status === 'PAGADO' ? 'default' : 
+                    llenado.payment_status === 'PARCIAL' ? 'secondary' : 'outline'
                   }
                   className="text-[10px] mt-1"
                 >
-                  {reparto.estado === 'cobrado' ? 'Cobrado' : 
-                   reparto.estado === 'parcial' ? 'Parcial' : 'Pendiente'}
+                  {llenado.payment_status === 'PAGADO' ? 'Pagado' : 
+                   llenado.payment_status === 'PARCIAL' ? 'Parcial' : 'Pendiente'}
                 </Badge>
               </div>
             </div>
@@ -187,8 +199,8 @@ export function Dashboard() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Estado de marcas</CardTitle>
-            <Link href="/clientes">
+            <CardTitle className="text-base font-semibold">Últimos movimientos</CardTitle>
+            <Link href="/marcas">
               <Button variant="ghost" size="sm" className="text-xs">
                 Ver todos <ArrowRight className="ml-1 h-3 w-3" />
               </Button>
@@ -197,23 +209,21 @@ export function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2">
-            {clientes.filter(c => c.tipo === 'marca').map((cliente) => (
-              <Link key={cliente.id} href={`/clientes/${cliente.id}`}>
+            {dashboard.ultimosMovimientos.map((movimiento) => (
+              <Link key={movimiento.id} href="/caja">
                 <div className="p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{cliente.nombre}</span>
-                    {cliente.stockPropio && (
-                      <Badge variant="outline" className="text-[10px]">Stock propio</Badge>
-                    )}
+                    <span className="font-medium">{movimiento.description}</span>
+                    <Badge variant={movimiento.type === "INGRESO" ? "default" : "outline"} className="text-[10px]">{movimiento.type}</Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <p className="text-muted-foreground text-xs">En calle</p>
-                      <p className="font-semibold">{cliente.bidonesEnCalle || cliente.bidonesActivos} bidones</p>
+                      <p className="text-muted-foreground text-xs">Categoría</p>
+                      <p className="font-semibold">{movimiento.category}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs">Pendiente</p>
-                      <p className="font-semibold">{formatCurrency(cliente.saldoPendiente)}</p>
+                      <p className="text-muted-foreground text-xs">Monto</p>
+                      <p className="font-semibold">{formatCurrency(Number(movimiento.amount))}</p>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/toaster'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const geistSans = Geist({ 
@@ -14,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Agua de Mesa - Sistema de Gestión',
-  description: 'Sistema de gestión para distribuidora de agua de mesa. Control de repartos, bidones, stock, finanzas y reportes.',
+  description: 'Sistema de gestión para Agua de Mesa Dos Hermanas. Control de llenados por marca, producción, stock propio, cuentas a cobrar y operación diaria.',
   icons: {
     icon: '/images/logo-aguademesa.png',
     shortcut: '/images/logo-aguademesa.png',
@@ -38,8 +40,11 @@ export default function RootLayout({
   return (
     <html lang="es" className="bg-background">
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+          <Toaster />
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -1,10 +1,5 @@
-import { AppLayout } from "@/components/app-layout"
-import { NuevoMovimientoForm } from "@/components/nuevo-movimiento-form"
+import { redirect } from "next/navigation"
 
 export default function NuevoMovimientoPage() {
-  return (
-    <AppLayout>
-      <NuevoMovimientoForm />
-    </AppLayout>
-  )
+  redirect("/caja#nuevo-movimiento")
 }

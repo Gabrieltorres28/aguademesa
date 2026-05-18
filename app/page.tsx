@@ -1,10 +1,12 @@
 import { AppLayout } from "@/components/app-layout"
 import { Dashboard } from "@/components/dashboard"
+import { getDashboardData } from "@/lib/actions/dashboard"
 
-export default function HomePage() {
+export default async function HomePage() {
+  const dashboard = await getDashboardData()
   return (
     <AppLayout>
-      <Dashboard />
+      <Dashboard dashboard={dashboard} />
     </AppLayout>
   )
 }

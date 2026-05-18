@@ -1,10 +1,12 @@
 import { AppLayout } from "@/components/app-layout"
 import { CajaModule } from "@/components/caja-module"
+import { listCashMovements } from "@/lib/actions/cash"
 
-export default function CajaPage() {
+export default async function CajaPage() {
+  const movements = await listCashMovements()
   return (
     <AppLayout>
-      <CajaModule />
+      <CajaModule movements={movements} />
     </AppLayout>
   )
 }

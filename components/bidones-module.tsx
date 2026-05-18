@@ -9,30 +9,33 @@ import {
   Truck, 
   AlertTriangle,
   Clock,
-  Search
+  Search,
+  Factory
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { getEstadisticasBidones, bidonesPrestados, formatCurrency } from "@/lib/data"
+import type { Filling, OwnClient, StockItem } from "@/lib/types"
 
-export function BidonesModule() {
+export function BidonesModule({ fillings = [], stockItems = [], ownClients = [] }: { fillings?: Filling[], stockItems?: StockItem[], ownClients?: OwnClient[] }) {
   const [searchTerm, setSearchTerm] = useState("")
-  const stats = getEstadisticasBidones()
-  
-  const filteredPrestados = bidonesPrestados.filter(b => 
-    b.cliente.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-  
-  // Calcular días desde entrega (simulado)
-  const getDiasDesdeEntrega = (fecha: string) => {
-    const partes = fecha.split('/')
-    const fechaEntrega = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]))
-    const hoy = new Date(2026, 4, 18) // 18/05/2026
-    const diff = Math.floor((hoy.getTime() - fechaEntrega.getTime()) / (1000 * 60 * 60 * 24))
-    return diff
+  const stats = {
+    totalBidones: stockItems.filter(i => i.category.toLowerCase().includes("bid")).reduce((acc, i) => acc + i.current_stock, 0) + ownClients.reduce((acc, c) => acc + c.bottles_in_street, 0),
+    bidonesLlenos: stockItems.filter(i => i.name.toLowerCase().includes("lleno")).reduce((acc, i) => acc + i.current_stock, 0),
+    bidonesVacios: stockItems.filter(i => i.name.toLowerCase().includes("vac")).reduce((acc, i) => acc + i.current_stock, 0),
+    bidonesEnCalle: ownClients.reduce((acc, c) => acc + c.bottles_in_street, 0),
+    bidonesPrestados: ownClients.reduce((acc, c) => acc + c.bottles_in_street, 0),
+    bidonesRotos: 0,
+    bidonesProcesadosTerceros: fillings.reduce((acc, f) => acc + f.filled_qty, 0),
   }
+  
+  const filteredPrestados = ownClients.filter(b => 
+    b.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+  const filteredProcesados = fillings.filter(b =>
+    (b.brands?.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+  )
   
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -45,7 +48,7 @@ export function BidonesModule() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Bidones</h1>
-          <p className="text-sm text-muted-foreground">Trazabilidad y control</p>
+          <p className="text-sm text-muted-foreground">Bidones propios y procesados para terceros</p>
         </div>
       </div>
       
@@ -55,7 +58,7 @@ export function BidonesModule() {
           <CardContent className="p-3">
             <div className="flex items-center gap-2 mb-1">
               <Package className="h-4 w-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Total</span>
+              <span className="text-xs text-muted-foreground">Propios total</span>
             </div>
             <p className="text-xl font-bold">{stats.totalBidones}</p>
           </CardContent>
@@ -82,7 +85,7 @@ export function BidonesModule() {
           <CardContent className="p-3">
             <div className="flex items-center gap-2 mb-1">
               <Truck className="h-4 w-4 text-warning" />
-              <span className="text-xs text-muted-foreground">En calle</span>
+              <span className="text-xs text-muted-foreground">Propios en calle</span>
             </div>
             <p className="text-xl font-bold text-warning">{stats.bidonesEnCalle}</p>
           </CardContent>
@@ -91,7 +94,7 @@ export function BidonesModule() {
           <CardContent className="p-3">
             <div className="flex items-center gap-2 mb-1">
               <Clock className="h-4 w-4 text-accent" />
-              <span className="text-xs text-muted-foreground">Prestados</span>
+              <span className="text-xs text-muted-foreground">Propios prestados</span>
             </div>
             <p className="text-xl font-bold text-accent">{stats.bidonesPrestados}</p>
           </CardContent>
@@ -111,42 +114,78 @@ export function BidonesModule() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input 
-          placeholder="Buscar por cliente..."
+          placeholder="Buscar por marca o cliente..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10"
         />
       </div>
       
-      {/* Bidones pendientes por cliente */}
+      {/* Bidones procesados para terceros */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Bidones pendientes de devolución</CardTitle>
+          <CardTitle className="text-base">Bidones procesados para terceros</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {filteredProcesados.map((procesado) => (
+            <div key={procesado.id} className="rounded-lg border bg-muted/30 p-3">
+              <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                <div className="flex items-center gap-2">
+                  <Factory className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold">{procesado.brands?.name || "Sin marca"}</h3>
+                </div>
+                <span className="text-xs text-muted-foreground">{procesado.filling_date}</span>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
+                <div className="rounded-md bg-card p-2">
+                  <p className="text-xs text-muted-foreground">Recibida</p>
+                  <p className="font-bold">{procesado.received_qty}</p>
+                </div>
+                <div className="rounded-md bg-card p-2">
+                  <p className="text-xs text-muted-foreground">Llenada</p>
+                  <p className="font-bold text-success">{procesado.filled_qty}</p>
+                </div>
+                <div className="rounded-md bg-card p-2">
+                  <p className="text-xs text-muted-foreground">Retirada</p>
+                  <p className="font-bold">{procesado.withdrawn_qty}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          <p className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
+            Estos bidones pertenecen a cada marca. No forman parte del stock propio ni de los bidones en calle de Dos Hermanas.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Bidones propios en calle */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Bidones propios de Dos Hermanas en calle</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {filteredPrestados.map((prestado) => {
-            const dias = getDiasDesdeEntrega(prestado.fechaEntrega)
-            const esUrgente = dias > 3
-            
+            const esUrgente = prestado.bottles_in_street > 10
+
             return (
-              <div 
+              <div
                 key={prestado.id}
                 className={`p-3 rounded-lg border ${esUrgente ? 'border-warning/50 bg-warning/5' : 'bg-muted/30'}`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{prestado.cliente}</h3>
+                    <h3 className="font-semibold">{prestado.name}</h3>
                     {esUrgente && (
                       <Badge variant="outline" className="text-[10px] text-warning border-warning">
-                        {dias} días
+                        alto
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xl font-bold">{prestado.pendientesDevolucion}</p>
+                  <p className="text-xl font-bold">{prestado.bottles_in_street}</p>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Entregados: {prestado.cantidadPrestada}</span>
-                  <span>Fecha: {prestado.fechaEntrega}</span>
+                  <span>Cliente propio</span>
+                  <span>{prestado.address || "Sin dirección"}</span>
                 </div>
               </div>
             )
@@ -157,7 +196,7 @@ export function BidonesModule() {
       {/* Resumen por estado */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Distribución de bidones</CardTitle>
+          <CardTitle className="text-base">Distribución de bidones propios</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -178,7 +217,7 @@ export function BidonesModule() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-warning" />
-                <span className="text-sm">En calle (clientes)</span>
+                <span className="text-sm">En calle (clientes propios)</span>
               </div>
               <span className="font-medium">{stats.bidonesEnCalle}</span>
             </div>

@@ -1,5 +1,4 @@
-import { AppLayout } from "@/components/app-layout"
-import { ClienteDetail } from "@/components/cliente-detail"
+import { redirect } from "next/navigation"
 
 interface ClientePageProps {
   params: Promise<{ id: string }>
@@ -7,10 +6,5 @@ interface ClientePageProps {
 
 export default async function ClientePage({ params }: ClientePageProps) {
   const { id } = await params
-  
-  return (
-    <AppLayout>
-      <ClienteDetail clienteId={id} />
-    </AppLayout>
-  )
+  redirect(`/marcas/${id}/editar`)
 }

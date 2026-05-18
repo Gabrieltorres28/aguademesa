@@ -3,29 +3,31 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Truck, Users, Package, Wallet, BarChart3, Menu } from "lucide-react"
+import { Home, Droplets, Users, Package, Wallet, BarChart3, Menu, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { signOutAction } from "@/lib/actions/auth"
 
 const navItems = [
   { href: "/", label: "Inicio", icon: Home },
-  { href: "/repartos", label: "Repartos", icon: Truck },
-  { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/llenados", label: "Llenados", icon: Droplets },
+  { href: "/marcas", label: "Marcas", icon: Users },
   { href: "/stock", label: "Stock", icon: Package },
   { href: "/caja", label: "Caja", icon: Wallet },
+  { href: "/configuracion", label: "Config", icon: Settings },
 ]
 
 function BrandLogo({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/" className="flex min-w-0 items-center gap-3">
-      <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-border/60 md:size-12">
+      <div className="relative size-11 shrink-0 md:size-14">
         <Image
           src="/images/logo-aguademesa.png"
           alt="Agua de Mesa"
           fill
           sizes="48px"
-          className="object-contain p-1"
+          className="object-contain"
           priority
         />
       </div>
@@ -118,10 +120,11 @@ export function DesktopSidebar() {
       </nav>
       
       <div className="p-4 border-t border-border">
-        <div className="text-xs text-muted-foreground">
-          <p>18/05/2026</p>
-          <p className="mt-1">Versión Demo</p>
-        </div>
+        <form action={signOutAction}>
+          <Button variant="outline" size="sm" className="w-full">
+            Salir
+          </Button>
+        </form>
       </div>
     </aside>
   )
@@ -165,8 +168,11 @@ export function MobileHeader() {
                 })}
               </nav>
               <div className="mt-6 pt-6 border-t border-border">
-                <p className="text-xs text-muted-foreground">18/05/2026</p>
-                <p className="text-xs text-muted-foreground mt-1">Versión Demo</p>
+                <form action={signOutAction}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Salir
+                  </Button>
+                </form>
               </div>
             </div>
           </SheetContent>

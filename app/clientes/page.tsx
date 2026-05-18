@@ -1,10 +1,5 @@
-import { AppLayout } from "@/components/app-layout"
-import { ClientesList } from "@/components/clientes-list"
+import { redirect } from "next/navigation"
 
 export default function ClientesPage() {
-  return (
-    <AppLayout>
-      <ClientesList />
-    </AppLayout>
-  )
+  redirect("/marcas")
 }

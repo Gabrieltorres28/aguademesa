@@ -1,39 +1,40 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { 
   Plus, 
   Search, 
   TrendingUp, 
   TrendingDown, 
   ArrowUpCircle, 
-  ArrowDownCircle,
-  Filter
+  ArrowDownCircle
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { movimientos, formatCurrency, getEstadisticasFinanzas, categorias } from "@/lib/data"
+import { formatCurrency } from "@/lib/data"
+import { createCashMovementAction } from "@/lib/actions/cash"
+import type { CashMovement } from "@/lib/types"
 
-export function CajaModule() {
+export function CajaModule({ movements = [] }: { movements?: CashMovement[] }) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterCategoria, setFilterCategoria] = useState<string>("todas")
   
-  const stats = getEstadisticasFinanzas()
+  const today = new Date().toISOString().slice(0, 10)
+  const monthStart = today.slice(0, 8) + "01"
+  const ingresosDia = movements.filter(m => m.type === "INGRESO" && m.movement_date === today).reduce((acc, m) => acc + Number(m.amount), 0)
+  const egresosDia = movements.filter(m => m.type === "EGRESO" && m.movement_date === today).reduce((acc, m) => acc + Number(m.amount), 0)
+  const ingresosMes = movements.filter(m => m.type === "INGRESO" && m.movement_date >= monthStart).reduce((acc, m) => acc + Number(m.amount), 0)
+  const egresosMes = movements.filter(m => m.type === "EGRESO" && m.movement_date >= monthStart).reduce((acc, m) => acc + Number(m.amount), 0)
   
-  const ingresos = movimientos.filter(m => m.tipo === 'ingreso')
-  const egresos = movimientos.filter(m => m.tipo === 'egreso')
+  const ingresos = movements.filter(m => m.type === 'INGRESO')
+  const egresos = movements.filter(m => m.type === 'EGRESO')
   
-  const filterMovimientos = (lista: typeof movimientos) => {
+  const filterMovimientos = (lista: CashMovement[]) => {
     return lista.filter(m => {
-      const matchesSearch = m.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            m.categoria.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesCategoria = filterCategoria === "todas" || m.categoria === filterCategoria
-      return matchesSearch && matchesCategoria
+      return m.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.category.toLowerCase().includes(searchTerm.toLowerCase())
     })
   }
   
@@ -45,12 +46,12 @@ export function CajaModule() {
           <h1 className="text-2xl font-bold text-foreground">Caja</h1>
           <p className="text-sm text-muted-foreground">Control de ingresos y gastos</p>
         </div>
-        <Link href="/caja/nuevo">
+        <a href="#nuevo-movimiento">
           <Button size="sm" className="gap-2">
             <Plus className="h-4 w-4" />
             <span className="hidden md:inline">Registrar</span>
           </Button>
-        </Link>
+        </a>
       </div>
       
       {/* Resumen financiero */}
@@ -61,7 +62,7 @@ export function CajaModule() {
               <TrendingUp className="h-4 w-4 text-success" />
               <span className="text-xs text-muted-foreground">Ingresos del día</span>
             </div>
-            <p className="text-xl font-bold text-success">{formatCurrency(stats.ingresosDelDia)}</p>
+            <p className="text-xl font-bold text-success">{formatCurrency(ingresosDia)}</p>
           </CardContent>
         </Card>
         <Card className="bg-destructive/5 border-destructive/20">
@@ -70,7 +71,7 @@ export function CajaModule() {
               <TrendingDown className="h-4 w-4 text-destructive" />
               <span className="text-xs text-muted-foreground">Gastos del día</span>
             </div>
-            <p className="text-xl font-bold text-destructive">{formatCurrency(stats.egresosDelDia)}</p>
+            <p className="text-xl font-bold text-destructive">{formatCurrency(egresosDia)}</p>
           </CardContent>
         </Card>
       </div>
@@ -81,16 +82,16 @@ export function CajaModule() {
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-xs text-muted-foreground">Ingresos mes</p>
-              <p className="text-lg font-bold text-success">{formatCurrency(stats.ingresosDelMes)}</p>
+              <p className="text-lg font-bold text-success">{formatCurrency(ingresosMes)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Gastos mes</p>
-              <p className="text-lg font-bold text-destructive">{formatCurrency(stats.egresosDelMes)}</p>
+              <p className="text-lg font-bold text-destructive">{formatCurrency(egresosMes)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Balance</p>
-              <p className={`text-lg font-bold ${stats.balanceMensual >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {formatCurrency(stats.balanceMensual)}
+              <p className={`text-lg font-bold ${ingresosMes - egresosMes >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatCurrency(ingresosMes - egresosMes)}
               </p>
             </div>
           </div>
@@ -112,7 +113,7 @@ export function CajaModule() {
       <Tabs defaultValue="todos" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="todos">
-            Todos ({movimientos.length})
+            Todos ({movements.length})
           </TabsTrigger>
           <TabsTrigger value="ingresos" className="text-success data-[state=active]:text-success">
             Ingresos ({ingresos.length})
@@ -123,7 +124,7 @@ export function CajaModule() {
         </TabsList>
         
         <TabsContent value="todos" className="mt-4 space-y-3">
-          {filterMovimientos(movimientos).map((mov) => (
+          {filterMovimientos(movements).map((mov) => (
             <MovimientoCard key={mov.id} movimiento={mov} />
           ))}
         </TabsContent>
@@ -140,16 +141,33 @@ export function CajaModule() {
           ))}
         </TabsContent>
       </Tabs>
+
+      <Card id="nuevo-movimiento">
+        <CardHeader><CardTitle className="text-base">Nuevo movimiento manual</CardTitle></CardHeader>
+        <CardContent>
+          <form action={createCashMovementAction} className="grid gap-3 md:grid-cols-6">
+            <Input name="movement_date" type="date" defaultValue={today} required />
+            <select name="type" className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+              <option value="INGRESO">Ingreso</option>
+              <option value="EGRESO">Egreso</option>
+            </select>
+            <Input name="category" placeholder="Categoría" required />
+            <Input name="description" placeholder="Descripción" required className="md:col-span-2" />
+            <Input name="amount" type="number" step="0.01" placeholder="Monto" required />
+            <Button type="submit" className="md:col-span-6">Guardar movimiento</Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
 
 interface MovimientoCardProps {
-  movimiento: typeof movimientos[0]
+  movimiento: CashMovement
 }
 
 function MovimientoCard({ movimiento }: MovimientoCardProps) {
-  const isIngreso = movimiento.tipo === 'ingreso'
+  const isIngreso = movimiento.type === 'INGRESO'
   
   return (
     <Card>
@@ -166,18 +184,18 @@ function MovimientoCard({ movimiento }: MovimientoCardProps) {
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <p className="font-medium truncate">{movimiento.descripcion}</p>
+              <p className="font-medium truncate">{movimiento.description}</p>
               <Badge variant="outline" className="text-[10px] shrink-0">
-                {movimiento.categoria}
+                {movimiento.category}
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">{movimiento.fecha}</p>
+            <p className="text-xs text-muted-foreground">{movimiento.movement_date}</p>
           </div>
           
           <p className={`font-bold text-lg shrink-0 ${
             isIngreso ? 'text-success' : 'text-destructive'
           }`}>
-            {isIngreso ? '+' : '-'}{formatCurrency(movimiento.monto)}
+            {isIngreso ? '+' : '-'}{formatCurrency(Number(movimiento.amount))}
           </p>
         </div>
       </CardContent>

@@ -1,10 +1,12 @@
 import { AppLayout } from "@/components/app-layout"
-import { RepartosList } from "@/components/repartos-list"
+import { DeliveriesList } from "@/components/deliveries-list"
+import { listDeliveries } from "@/lib/actions/deliveries"
 
-export default function RepartosPage() {
+export default async function RepartosPage() {
+  const deliveries = await listDeliveries()
   return (
     <AppLayout>
-      <RepartosList />
+      <DeliveriesList deliveries={deliveries} />
     </AppLayout>
   )
 }

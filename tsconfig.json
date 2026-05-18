@@ -23,6 +23,9 @@
       }
     ],
     "paths": {
+      "@supabase/ssr": [
+        "./lib/supabase/ssr-shim.ts"
+      ],
       "@/*": [
         "./*"
       ]

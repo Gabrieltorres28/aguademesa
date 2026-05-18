@@ -1,10 +1,12 @@
 import { AppLayout } from "@/components/app-layout"
-import { NuevoRepartoForm } from "@/components/nuevo-reparto-form"
+import { NewDeliveryForm } from "@/components/new-delivery-form"
+import { listOwnClients } from "@/lib/actions/deliveries"
 
-export default function NuevoRepartoPage() {
+export default async function NuevoRepartoPage() {
+  const clients = await listOwnClients()
   return (
     <AppLayout>
-      <NuevoRepartoForm />
+      <NewDeliveryForm clients={clients} />
     </AppLayout>
   )
 }
