@@ -23,7 +23,7 @@ export default async function LoginPage({
             <Image src="/images/logo-aguademesa.png" alt="Agua de Mesa Dos Hermanas" fill className="object-contain p-1" priority />
           </div>
           <CardTitle>Agua de Mesa Dos Hermanas</CardTitle>
-          <p className="text-sm text-muted-foreground">Ingresá para usuario y contraseña</p>
+          <p className="text-sm text-muted-foreground">Ingresá usuario y contraseña</p>
         </CardHeader>
         <CardContent>
           {missingEnv && (
