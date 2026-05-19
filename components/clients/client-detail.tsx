@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/data"
-import { deactivateOwnClientAction } from "@/lib/actions/deliveries"
+import { deactivateOwnClientAction, deleteOwnClientAction, reactivateOwnClientAction } from "@/lib/actions/deliveries"
 import type { Delivery, OwnClient } from "@/lib/types"
 
 export function ClientDetail({
@@ -43,17 +43,32 @@ export function ClientDetail({
           </Button>
         </Link>
       </div>
-      {client.is_active !== false && (
-        <form action={deactivateOwnClientAction}>
+      <div className="flex flex-wrap gap-2">
+        {client.is_active !== false ? (
+          <form action={deactivateOwnClientAction}>
+            <input type="hidden" name="id" value={client.id} />
+            <Button type="submit" variant="outline" size="sm" className="text-warning hover:text-warning">
+              Desactivar cliente
+            </Button>
+          </form>
+        ) : (
+          <form action={reactivateOwnClientAction}>
+            <input type="hidden" name="id" value={client.id} />
+            <Button type="submit" variant="outline" size="sm" className="text-success hover:text-success">
+              Reactivar cliente
+            </Button>
+          </form>
+        )}
+        <form action={deleteOwnClientAction}>
           <input type="hidden" name="id" value={client.id} />
           <DeleteSubmitButton
-            label="Desactivar cliente"
-            title="Desactivar cliente"
-            description="El cliente no aparecerá para nuevos repartos, pero se conserva su historial."
-            confirmLabel="Desactivar"
+            label="Eliminar definitivamente"
+            title="Eliminar cliente definitivamente"
+            description="¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer."
+            confirmLabel="Eliminar definitivamente"
           />
         </form>
-      )}
+      </div>
 
       {created && <StatusMessage text="Cliente creado correctamente." />}
       {updated && <StatusMessage text="Cliente actualizado correctamente." />}

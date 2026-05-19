@@ -13,7 +13,7 @@ import { deleteFillingAction } from "@/lib/actions/fillings"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Brand, Filling } from "@/lib/types"
 
-export function RepartosList({ fillings = [], brands = [] }: { fillings?: Filling[], brands?: Brand[] }) {
+export function RepartosList({ fillings = [], brands = [], status, error }: { fillings?: Filling[]; brands?: Brand[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterMarca, setFilterMarca] = useState<string>("todos")
   const [filterEstado, setFilterEstado] = useState<string>("todos")
@@ -46,6 +46,9 @@ export function RepartosList({ fillings = [], brands = [] }: { fillings?: Fillin
           </Button>
         </Link>
       </div>
+
+      {status && <StatusMessage text={status} />}
+      {error && <ErrorMessage text={error} />}
       
       {/* Resumen del día */}
       <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 md:grid-cols-3">
@@ -193,4 +196,13 @@ export function RepartosList({ fillings = [], brands = [] }: { fillings?: Fillin
       </div>
     </div>
   )
+}
+
+
+function StatusMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">{text}</div>
+}
+
+function ErrorMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{text}</div>
 }

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { createBrandAction, deactivateBrandAction, updateBrandAction } from "@/lib/actions/brands"
+import { createBrandAction, deactivateBrandAction, deleteBrandAction, reactivateBrandAction, updateBrandAction } from "@/lib/actions/brands"
 import type { Brand } from "@/lib/types"
 
 export function BrandForm({
@@ -86,17 +86,34 @@ export function BrandForm({
         </Button>
       </form>
 
-      {brand?.is_active && (
-        <form action={deactivateBrandAction}>
-          <input type="hidden" name="id" value={brand.id} />
-          <DeleteSubmitButton
-            label="Desactivar marca"
-            title="Desactivar marca"
-            description="La marca no aparecerá para nuevos llenados, pero se conserva su historial."
-            confirmLabel="Desactivar"
-            className="w-full text-destructive hover:text-destructive"
-          />
-        </form>
+      {brand && (
+        <div className="grid gap-2 min-[420px]:grid-cols-2">
+          {brand.is_active ? (
+            <form action={deactivateBrandAction}>
+              <input type="hidden" name="id" value={brand.id} />
+              <Button type="submit" variant="outline" className="w-full text-warning hover:text-warning">
+                Desactivar marca
+              </Button>
+            </form>
+          ) : (
+            <form action={reactivateBrandAction}>
+              <input type="hidden" name="id" value={brand.id} />
+              <Button type="submit" variant="outline" className="w-full text-success hover:text-success">
+                Reactivar marca
+              </Button>
+            </form>
+          )}
+          <form action={deleteBrandAction}>
+            <input type="hidden" name="id" value={brand.id} />
+            <DeleteSubmitButton
+              label="Eliminar definitivamente"
+              title="Eliminar marca definitivamente"
+              description="¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer."
+              confirmLabel="Eliminar definitivamente"
+              className="w-full text-destructive hover:text-destructive"
+            />
+          </form>
+        </div>
       )}
     </div>
   )

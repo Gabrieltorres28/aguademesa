@@ -9,9 +9,9 @@ import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { Brand } from "@/lib/types"
-import { deactivateBrandAction } from "@/lib/actions/brands"
+import { deactivateBrandAction, deleteBrandAction, reactivateBrandAction } from "@/lib/actions/brands"
 
-export function BrandsList({ brands = [] }: { brands?: Brand[] }) {
+export function BrandsList({ brands = [], status, error }: { brands?: Brand[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
   const filtered = brands.filter(brand => brand.name.toLowerCase().includes(searchTerm.toLowerCase()))
   const activeCount = brands.filter(brand => brand.is_active).length
@@ -30,6 +30,9 @@ export function BrandsList({ brands = [] }: { brands?: Brand[] }) {
           </Button>
         </Link>
       </div>
+
+      {status && <StatusMessage text={status} />}
+      {error && <ErrorMessage text={error} />}
 
       <div className="grid grid-cols-2 gap-3">
         <Card>
@@ -92,17 +95,30 @@ export function BrandsList({ brands = [] }: { brands?: Brand[] }) {
                     Editar
                   </Button>
                 </Link>
-                {brand.is_active && (
+                {brand.is_active ? (
                   <form action={deactivateBrandAction}>
                     <input type="hidden" name="id" value={brand.id} />
-                    <DeleteSubmitButton
-                      label="Desactivar"
-                      title="Desactivar marca"
-                      description="La marca no aparecerá para nuevos llenados, pero se conserva su historial."
-                      confirmLabel="Desactivar"
-                    />
+                    <Button type="submit" variant="outline" size="sm" className="text-warning hover:text-warning">
+                      Desactivar
+                    </Button>
+                  </form>
+                ) : (
+                  <form action={reactivateBrandAction}>
+                    <input type="hidden" name="id" value={brand.id} />
+                    <Button type="submit" variant="outline" size="sm" className="text-success hover:text-success">
+                      Reactivar
+                    </Button>
                   </form>
                 )}
+                <form action={deleteBrandAction}>
+                  <input type="hidden" name="id" value={brand.id} />
+                  <DeleteSubmitButton
+                    label="Eliminar definitivamente"
+                    title="Eliminar marca definitivamente"
+                    description="¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer."
+                    confirmLabel="Eliminar definitivamente"
+                  />
+                </form>
               </div>
             </CardContent>
           </Card>
@@ -117,4 +133,13 @@ export function BrandsList({ brands = [] }: { brands?: Brand[] }) {
       </div>
     </div>
   )
+}
+
+
+function StatusMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">{text}</div>
+}
+
+function ErrorMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{text}</div>
 }

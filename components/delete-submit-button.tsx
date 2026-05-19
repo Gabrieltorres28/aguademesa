@@ -27,7 +27,7 @@ type DeleteSubmitButtonProps = {
 export function DeleteSubmitButton({
   label = "Eliminar",
   title = "Confirmar eliminación",
-  description = "Esta acción no se puede deshacer.",
+  description = "¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer.",
   confirmLabel = "Eliminar",
   pendingLabel = "Procesando...",
   className,

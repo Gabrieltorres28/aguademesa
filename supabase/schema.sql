@@ -169,32 +169,32 @@ create policy "authenticated update own profile" on public.profiles for update t
 create policy "authenticated read brands" on public.brands for select to authenticated using (true);
 create policy "authenticated write brands" on public.brands for insert to authenticated with check (true);
 create policy "authenticated update brands" on public.brands for update to authenticated using (true) with check (true);
-create policy "admin delete brands" on public.brands for delete to authenticated using (public.is_admin());
+create policy "authenticated delete brands" on public.brands for delete to authenticated using (true);
 
 create policy "authenticated read fillings" on public.fillings for select to authenticated using (true);
 create policy "authenticated write fillings" on public.fillings for insert to authenticated with check (true);
 create policy "authenticated update fillings" on public.fillings for update to authenticated using (true) with check (true);
-create policy "admin delete fillings" on public.fillings for delete to authenticated using (public.is_admin());
+create policy "authenticated delete fillings" on public.fillings for delete to authenticated using (true);
 
 create policy "authenticated read own_clients" on public.own_clients for select to authenticated using (true);
 create policy "authenticated write own_clients" on public.own_clients for insert to authenticated with check (true);
 create policy "authenticated update own_clients" on public.own_clients for update to authenticated using (true) with check (true);
-create policy "admin delete own_clients" on public.own_clients for delete to authenticated using (public.is_admin());
+create policy "authenticated delete own_clients" on public.own_clients for delete to authenticated using (true);
 
 create policy "authenticated read deliveries" on public.deliveries for select to authenticated using (true);
 create policy "authenticated write deliveries" on public.deliveries for insert to authenticated with check (true);
 create policy "authenticated update deliveries" on public.deliveries for update to authenticated using (true) with check (true);
-create policy "admin delete deliveries" on public.deliveries for delete to authenticated using (public.is_admin());
+create policy "authenticated delete deliveries" on public.deliveries for delete to authenticated using (true);
 
 create policy "authenticated read stock_items" on public.stock_items for select to authenticated using (true);
 create policy "authenticated write stock_items" on public.stock_items for insert to authenticated with check (true);
 create policy "authenticated update stock_items" on public.stock_items for update to authenticated using (true) with check (true);
-create policy "admin delete stock_items" on public.stock_items for delete to authenticated using (public.is_admin());
+create policy "authenticated delete stock_items" on public.stock_items for delete to authenticated using (true);
 
 create policy "authenticated read cash_movements" on public.cash_movements for select to authenticated using (true);
 create policy "authenticated write cash_movements" on public.cash_movements for insert to authenticated with check (true);
 create policy "authenticated update cash_movements" on public.cash_movements for update to authenticated using (true) with check (true);
-create policy "admin delete cash_movements" on public.cash_movements for delete to authenticated using (public.is_admin());
+create policy "authenticated delete cash_movements" on public.cash_movements for delete to authenticated using (true);
 
 create policy "authenticated read settings" on public.settings for select to authenticated using (true);
 create policy "authenticated write settings" on public.settings for insert to authenticated with check (true);

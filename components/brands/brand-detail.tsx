@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/data"
-import { deactivateBrandAction } from "@/lib/actions/brands"
+import { deactivateBrandAction, deleteBrandAction, reactivateBrandAction } from "@/lib/actions/brands"
 import type { Brand, Filling } from "@/lib/types"
 
 export function BrandDetail({ brand, fillings }: { brand: Brand; fillings: Filling[] }) {
@@ -38,17 +38,32 @@ export function BrandDetail({ brand, fillings }: { brand: Brand; fillings: Filli
           </Button>
         </Link>
       </div>
-      {brand.is_active && (
-        <form action={deactivateBrandAction}>
+      <div className="flex flex-wrap gap-2">
+        {brand.is_active ? (
+          <form action={deactivateBrandAction}>
+            <input type="hidden" name="id" value={brand.id} />
+            <Button type="submit" variant="outline" size="sm" className="text-warning hover:text-warning">
+              Desactivar marca
+            </Button>
+          </form>
+        ) : (
+          <form action={reactivateBrandAction}>
+            <input type="hidden" name="id" value={brand.id} />
+            <Button type="submit" variant="outline" size="sm" className="text-success hover:text-success">
+              Reactivar marca
+            </Button>
+          </form>
+        )}
+        <form action={deleteBrandAction}>
           <input type="hidden" name="id" value={brand.id} />
           <DeleteSubmitButton
-            label="Desactivar marca"
-            title="Desactivar marca"
-            description="La marca no aparecerá para nuevos llenados, pero se conserva su historial."
-            confirmLabel="Desactivar"
+            label="Eliminar definitivamente"
+            title="Eliminar marca definitivamente"
+            description="¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer."
+            confirmLabel="Eliminar definitivamente"
           />
         </form>
-      )}
+      </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Metric label="Bidones llenados" value={filledQty.toString()} />

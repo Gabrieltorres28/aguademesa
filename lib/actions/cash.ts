@@ -7,6 +7,11 @@ import { hasSupabaseEnv } from "@/lib/supabase/config"
 import { numberFromForm, requireSupabase, stringFromForm } from "./utils"
 import type { CashMovement } from "@/lib/types"
 
+function isDeleteBlockedByPolicy(error: { code?: string; message?: string } | null) {
+  const message = error?.message?.toLowerCase() || ""
+  return Boolean(error?.code === "42501" || message.includes("row-level security") || message.includes("permission denied"))
+}
+
 export async function listCashMovements(): Promise<CashMovement[]> {
   if (!hasSupabaseEnv()) return []
   const supabase = await createClient()
@@ -21,7 +26,7 @@ export async function listCashMovements(): Promise<CashMovement[]> {
 
 export async function createCashMovementAction(formData: FormData) {
   const { supabase, user } = await requireSupabase()
-  await supabase.from("cash_movements").insert({
+  const { error } = await supabase.from("cash_movements").insert({
     movement_date: stringFromForm(formData, "movement_date"),
     type: stringFromForm(formData, "type"),
     category: stringFromForm(formData, "category"),
@@ -29,8 +34,13 @@ export async function createCashMovementAction(formData: FormData) {
     amount: numberFromForm(formData, "amount"),
     created_by: user.id,
   })
+  if (error) {
+    console.error("Error creating cash movement", error)
+    redirect(`/caja?error=${encodeURIComponent(error.message)}`)
+  }
   revalidatePath("/")
   revalidatePath("/caja")
+  redirect("/caja?created=1")
 }
 
 export async function updateCashMovementAction(formData: FormData) {
@@ -48,7 +58,10 @@ export async function updateCashMovementAction(formData: FormData) {
     })
     .eq("id", id)
 
-  if (error) redirect(`/caja?error=${encodeURIComponent(error.message)}`)
+  if (error) {
+    console.error("Error updating cash movement", error)
+    redirect(`/caja?error=${encodeURIComponent(error.message)}`)
+  }
   revalidatePath("/")
   revalidatePath("/caja")
   revalidatePath("/reportes")
@@ -59,8 +72,14 @@ export async function deleteCashMovementAction(formData: FormData) {
   const { supabase } = await requireSupabase()
   const id = stringFromForm(formData, "id")
   if (!id) redirect("/caja")
-  const { error } = await supabase.from("cash_movements").delete().eq("id", id)
-  if (error) redirect(`/caja?error=${encodeURIComponent(error.message)}`)
+  const { data: deletedMovement, error } = await supabase.from("cash_movements").delete().eq("id", id).select()
+  console.error("Supabase delete result", { table: "cash_movements", id, data: deletedMovement, error })
+  if (error) {
+    redirect(`/caja?error=${encodeURIComponent(error.message)}`)
+  }
+  if (!deletedMovement || deletedMovement.length === 0) {
+    redirect(`/caja?error=${encodeURIComponent("No se encontró el registro para eliminar.")}`)
+  }
   revalidatePath("/")
   revalidatePath("/caja")
   revalidatePath("/reportes")

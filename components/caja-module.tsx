@@ -20,7 +20,7 @@ import { createCashMovementAction, deleteCashMovementAction, updateCashMovementA
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { CashMovement } from "@/lib/types"
 
-export function CajaModule({ movements = [] }: { movements?: CashMovement[] }) {
+export function CajaModule({ movements = [], status, error }: { movements?: CashMovement[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [manualMovement, setManualMovement] = useState({ type: "INGRESO", amount: "" })
   
@@ -56,6 +56,9 @@ export function CajaModule({ movements = [] }: { movements?: CashMovement[] }) {
           </Button>
         </a>
       </div>
+
+      {status && <StatusMessage text={status} />}
+      {error && <ErrorMessage text={error} />}
       
       {/* Resumen financiero */}
       <div className="grid grid-cols-2 gap-3">
@@ -249,4 +252,13 @@ function MovimientoCard({ movimiento }: MovimientoCardProps) {
       </CardContent>
     </Card>
   )
+}
+
+
+function StatusMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">{text}</div>
+}
+
+function ErrorMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{text}</div>
 }

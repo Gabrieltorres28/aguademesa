@@ -10,7 +10,7 @@ import { deleteDeliveryAction } from "@/lib/actions/deliveries"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Delivery } from "@/lib/types"
 
-export function DeliveriesList({ deliveries = [] }: { deliveries?: Delivery[] }) {
+export function DeliveriesList({ deliveries = [], status, error }: { deliveries?: Delivery[]; status?: string; error?: string }) {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -22,6 +22,9 @@ export function DeliveriesList({ deliveries = [] }: { deliveries?: Delivery[] })
           <Button size="sm" className="gap-2"><Plus className="h-4 w-4" />Nuevo</Button>
         </Link>
       </div>
+
+      {status && <StatusMessage text={status} />}
+      {error && <ErrorMessage text={error} />}
 
       <div className="space-y-3">
         {deliveries.map((delivery) => (
@@ -70,4 +73,13 @@ export function DeliveriesList({ deliveries = [] }: { deliveries?: Delivery[] })
       </div>
     </div>
   )
+}
+
+
+function StatusMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">{text}</div>
+}
+
+function ErrorMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{text}</div>
 }

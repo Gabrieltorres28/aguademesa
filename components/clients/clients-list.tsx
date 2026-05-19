@@ -9,10 +9,10 @@ import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { formatCurrency } from "@/lib/data"
-import { deactivateOwnClientAction } from "@/lib/actions/deliveries"
+import { deactivateOwnClientAction, deleteOwnClientAction, reactivateOwnClientAction } from "@/lib/actions/deliveries"
 import type { OwnClient } from "@/lib/types"
 
-export function ClientsList({ clients = [] }: { clients?: OwnClient[] }) {
+export function ClientsList({ clients = [], status, error }: { clients?: OwnClient[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
   const query = searchTerm.trim().toLowerCase()
   const filtered = clients.filter((client) => {
@@ -36,6 +36,9 @@ export function ClientsList({ clients = [] }: { clients?: OwnClient[] }) {
           </Button>
         </Link>
       </div>
+
+      {status && <StatusMessage text={status} />}
+      {error && <ErrorMessage text={error} />}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <Card>
@@ -112,17 +115,30 @@ export function ClientsList({ clients = [] }: { clients?: OwnClient[] }) {
                       Editar
                     </Button>
                   </Link>
-                  {client.is_active !== false && (
+                  {client.is_active !== false ? (
                     <form action={deactivateOwnClientAction}>
                       <input type="hidden" name="id" value={client.id} />
-                      <DeleteSubmitButton
-                        label="Desactivar"
-                        title="Desactivar cliente"
-                        description="El cliente no aparecerá para nuevos repartos, pero se conserva su historial."
-                        confirmLabel="Desactivar"
-                      />
+                      <Button type="submit" variant="outline" size="sm" className="text-warning hover:text-warning">
+                        Desactivar
+                      </Button>
+                    </form>
+                  ) : (
+                    <form action={reactivateOwnClientAction}>
+                      <input type="hidden" name="id" value={client.id} />
+                      <Button type="submit" variant="outline" size="sm" className="text-success hover:text-success">
+                        Reactivar
+                      </Button>
                     </form>
                   )}
+                  <form action={deleteOwnClientAction}>
+                    <input type="hidden" name="id" value={client.id} />
+                    <DeleteSubmitButton
+                      label="Eliminar definitivamente"
+                      title="Eliminar cliente definitivamente"
+                      description="¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer."
+                      confirmLabel="Eliminar definitivamente"
+                    />
+                  </form>
                 </div>
               </CardContent>
             </Card>
@@ -152,4 +168,13 @@ export function ClientsList({ clients = [] }: { clients?: OwnClient[] }) {
       </div>
     </div>
   )
+}
+
+
+function StatusMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">{text}</div>
+}
+
+function ErrorMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{text}</div>
 }

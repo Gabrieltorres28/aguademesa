@@ -11,6 +11,15 @@ function isMissingOwnClientActiveColumn(error: { message?: string } | null) {
   return Boolean(error?.message?.includes("'is_active'") || error?.message?.includes("is_active"))
 }
 
+function isForeignKeyError(error: { code?: string; message?: string } | null) {
+  return Boolean(error?.code === "23503" || error?.message?.toLowerCase().includes("foreign key"))
+}
+
+function isDeleteBlockedByPolicy(error: { code?: string; message?: string } | null) {
+  const message = error?.message?.toLowerCase() || ""
+  return Boolean(error?.code === "42501" || message.includes("row-level security") || message.includes("permission denied"))
+}
+
 export async function listOwnClients(): Promise<OwnClient[]> {
   if (!hasSupabaseEnv()) return []
   const supabase = await createClient()
@@ -37,11 +46,11 @@ export async function createOwnClientAction(formData: FormData) {
       ...payload,
       is_active: formData.get("is_active") === "on",
     })
-    .select("id")
+    .select()
     .single()
 
   if (isMissingOwnClientActiveColumn(error)) {
-    const retry = await supabase.from("own_clients").insert(payload).select("id").single()
+    const retry = await supabase.from("own_clients").insert(payload).select().single()
     data = retry.data
     error = retry.error
   }
@@ -96,11 +105,70 @@ export async function deactivateOwnClientAction(formData: FormData) {
   if (isMissingOwnClientActiveColumn(error)) {
     redirect(`/clientes/${id}/editar?error=${encodeURIComponent("Para desactivar clientes, primero ejecutá la migración de is_active en Supabase.")}`)
   }
-  if (error) redirect(`/clientes/${id}/editar?error=${encodeURIComponent(error.message)}`)
+  if (error) {
+    console.error("Error deactivating own client", error)
+    redirect(`/clientes?error=${encodeURIComponent(error.message)}`)
+  }
+  revalidatePath("/")
+  revalidatePath("/clientes")
+  revalidatePath(`/clientes/${id}`)
+  revalidatePath("/repartos")
+  redirect("/clientes?deactivated=1")
+}
+
+export async function reactivateOwnClientAction(formData: FormData) {
+  const { supabase } = await requireSupabase()
+  const id = stringFromForm(formData, "id")
+  if (!id) redirect("/clientes")
+
+  const { error } = await supabase.from("own_clients").update({ is_active: true }).eq("id", id)
+  if (error) {
+    console.error("Error reactivating own client", error)
+    redirect(`/clientes?error=${encodeURIComponent(error.message)}`)
+  }
+  revalidatePath("/")
+  revalidatePath("/clientes")
+  revalidatePath(`/clientes/${id}`)
+  revalidatePath("/repartos")
+  redirect("/clientes?reactivated=1")
+}
+
+export async function deleteOwnClientAction(formData: FormData) {
+  const { supabase } = await requireSupabase()
+  const id = stringFromForm(formData, "id")
+  if (!id) redirect("/clientes")
+
+  const [{ data: deliveries, error: deliveriesError }, { data: cashMovements, error: cashError }] = await Promise.all([
+    supabase.from("deliveries").select().eq("client_id", id),
+    supabase.from("cash_movements").select().eq("related_client_id", id),
+  ])
+
+  if (deliveriesError || cashError) {
+    console.error("Error checking own client associations before delete", deliveriesError || cashError)
+    redirect(`/clientes?error=${encodeURIComponent("No se pudo verificar si el cliente tiene movimientos asociados.")}`)
+  }
+
+  if ((deliveries?.length || 0) > 0 || (cashMovements?.length || 0) > 0) {
+    redirect(`/clientes?error=${encodeURIComponent("No se puede eliminar este cliente porque tiene repartos o movimientos asociados. Podés desactivarlo.")}`)
+  }
+
+  const { data: deletedClient, error } = await supabase.from("own_clients").delete().eq("id", id).select()
+  console.error("Supabase delete result", { table: "own_clients", id, data: deletedClient, error })
+  if (error) {
+    if (isForeignKeyError(error)) {
+      redirect(`/clientes?error=${encodeURIComponent("No se puede eliminar este cliente porque tiene repartos o movimientos asociados. Podés desactivarlo.")}`)
+    }
+    redirect(`/clientes?error=${encodeURIComponent(error.message)}`)
+  }
+  if (!deletedClient || deletedClient.length === 0) {
+    redirect(`/clientes?error=${encodeURIComponent("No se encontró el registro para eliminar.")}`)
+  }
+
   revalidatePath("/")
   revalidatePath("/clientes")
   revalidatePath("/repartos")
-  redirect("/clientes?deactivated=1")
+  revalidatePath("/caja")
+  redirect("/clientes?deleted=1")
 }
 
 export async function getOwnClient(id: string): Promise<OwnClient | null> {
@@ -281,8 +349,14 @@ export async function deleteDeliveryAction(formData: FormData) {
     .eq("id", id)
     .single()
 
-  const { error } = await supabase.from("deliveries").delete().eq("id", id)
-  if (error) redirect(`/repartos/${id}?error=${encodeURIComponent(error.message)}`)
+  const { data: deletedDelivery, error } = await supabase.from("deliveries").delete().eq("id", id).select()
+  console.error("Supabase delete result", { table: "deliveries", id, data: deletedDelivery, error })
+  if (error) {
+    redirect(`/repartos?error=${encodeURIComponent(error.message)}`)
+  }
+  if (!deletedDelivery || deletedDelivery.length === 0) {
+    redirect(`/repartos?error=${encodeURIComponent("No se encontró el registro para eliminar.")}`)
+  }
 
   if (previous) {
     const clientId = String(previous.client_id)

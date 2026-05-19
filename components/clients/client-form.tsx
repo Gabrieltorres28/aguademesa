@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { createOwnClientAction, deactivateOwnClientAction, updateOwnClientAction } from "@/lib/actions/deliveries"
+import { createOwnClientAction, deactivateOwnClientAction, deleteOwnClientAction, reactivateOwnClientAction, updateOwnClientAction } from "@/lib/actions/deliveries"
 import type { OwnClient } from "@/lib/types"
 
 export function ClientForm({
@@ -76,17 +76,34 @@ export function ClientForm({
         </Button>
       </form>
 
-      {client?.is_active !== false && client && (
-        <form action={deactivateOwnClientAction}>
-          <input type="hidden" name="id" value={client.id} />
-          <DeleteSubmitButton
-            label="Desactivar cliente"
-            title="Desactivar cliente"
-            description="El cliente no aparecerá para nuevos repartos, pero se conserva su historial."
-            confirmLabel="Desactivar"
-            className="w-full text-destructive hover:text-destructive"
-          />
-        </form>
+      {client && (
+        <div className="grid gap-2 min-[420px]:grid-cols-2">
+          {client.is_active !== false ? (
+            <form action={deactivateOwnClientAction}>
+              <input type="hidden" name="id" value={client.id} />
+              <Button type="submit" variant="outline" className="w-full text-warning hover:text-warning">
+                Desactivar cliente
+              </Button>
+            </form>
+          ) : (
+            <form action={reactivateOwnClientAction}>
+              <input type="hidden" name="id" value={client.id} />
+              <Button type="submit" variant="outline" className="w-full text-success hover:text-success">
+                Reactivar cliente
+              </Button>
+            </form>
+          )}
+          <form action={deleteOwnClientAction}>
+            <input type="hidden" name="id" value={client.id} />
+            <DeleteSubmitButton
+              label="Eliminar definitivamente"
+              title="Eliminar cliente definitivamente"
+              description="¿Seguro que querés eliminar este registro? Esta acción no se puede deshacer."
+              confirmLabel="Eliminar definitivamente"
+              className="w-full text-destructive hover:text-destructive"
+            />
+          </form>
+        </div>
       )}
     </div>
   )

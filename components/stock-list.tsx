@@ -11,7 +11,7 @@ import { createStockItemAction, deleteStockItemAction, updateStockItemAction } f
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { StockItem } from "@/lib/types"
 
-export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
+export function StockList({ stockItems = [], status, error }: { stockItems?: StockItem[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
   
   const filteredProductos = stockItems.filter(p => 
@@ -34,6 +34,9 @@ export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
           <Button size="sm">Nuevo</Button>
         </a>
       </div>
+
+      {status && <StatusMessage text={status} />}
+      {error && <ErrorMessage text={error} />}
       
       {/* Alertas */}
       {(productosCriticos.length > 0 || productosBajos.length > 0) && (
@@ -191,4 +194,13 @@ function ProductoCard({ producto }: ProductoCardProps) {
       </CardContent>
     </Card>
   )
+}
+
+
+function StatusMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">{text}</div>
+}
+
+function ErrorMessage({ text }: { text: string }) {
+  return <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{text}</div>
 }

@@ -7,6 +7,11 @@ import { hasSupabaseEnv } from "@/lib/supabase/config"
 import { calculatePaymentStatus, numberFromForm, requireSupabase, stringFromForm } from "./utils"
 import type { Filling } from "@/lib/types"
 
+function isDeleteBlockedByPolicy(error: { code?: string; message?: string } | null) {
+  const message = error?.message?.toLowerCase() || ""
+  return Boolean(error?.code === "42501" || message.includes("row-level security") || message.includes("permission denied"))
+}
+
 export async function listFillings(): Promise<Filling[]> {
   if (!hasSupabaseEnv()) return []
   const supabase = await createClient()
@@ -58,7 +63,7 @@ export async function createFillingAction(formData: FormData) {
       notes: stringFromForm(formData, "notes") || null,
       created_by: user.id,
     })
-    .select("id")
+    .select()
     .single()
 
   if (error) redirect(`/llenados/nuevo?error=${encodeURIComponent(error.message)}`)
@@ -127,8 +132,14 @@ export async function deleteFillingAction(formData: FormData) {
   const id = stringFromForm(formData, "id")
   if (!id) redirect("/llenados")
 
-  const { error } = await supabase.from("fillings").delete().eq("id", id)
-  if (error) redirect(`/llenados/${id}?error=${encodeURIComponent(error.message)}`)
+  const { data: deletedFilling, error } = await supabase.from("fillings").delete().eq("id", id).select()
+  console.error("Supabase delete result", { table: "fillings", id, data: deletedFilling, error })
+  if (error) {
+    redirect(`/llenados?error=${encodeURIComponent(error.message)}`)
+  }
+  if (!deletedFilling || deletedFilling.length === 0) {
+    redirect(`/llenados?error=${encodeURIComponent("No se encontró el registro para eliminar.")}`)
+  }
 
   revalidatePath("/")
   revalidatePath("/llenados")
