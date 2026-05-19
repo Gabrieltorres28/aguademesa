@@ -5,9 +5,11 @@ import Link from "next/link"
 import { Building2, Edit, Plus, Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { Brand } from "@/lib/types"
+import { deactivateBrandAction } from "@/lib/actions/brands"
 
 export function BrandsList({ brands = [] }: { brands?: Brand[] }) {
   const [searchTerm, setSearchTerm] = useState("")
@@ -33,13 +35,13 @@ export function BrandsList({ brands = [] }: { brands?: Brand[] }) {
         <Card>
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">Marcas activas</p>
-            <p className="text-xl font-bold">{activeCount}</p>
+            <p className="safe-number text-xl font-bold">{activeCount}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">Total marcas</p>
-            <p className="text-xl font-bold">{brands.length}</p>
+            <p className="safe-number text-xl font-bold">{brands.length}</p>
           </CardContent>
         </Card>
       </div>
@@ -59,24 +61,48 @@ export function BrandsList({ brands = [] }: { brands?: Brand[] }) {
           <Card key={brand.id} className="hover:bg-muted/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Building2 className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <p className="font-semibold break-words">{brand.name}</p>
-                    <Badge variant={brand.is_active ? "default" : "secondary"} className="text-[10px]">
-                      {brand.is_active ? "Activa" : "Inactiva"}
-                    </Badge>
+                <Link href={`/marcas/${brand.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <Building2 className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-xs text-muted-foreground">{brand.phone || "Sin teléfono"}</p>
-                  {brand.notes && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{brand.notes}</p>}
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <p className="font-semibold break-words">{brand.name}</p>
+                      <Badge variant={brand.is_active ? "default" : "secondary"} className="text-[10px]">
+                        {brand.is_active ? "Activa" : "Inactiva"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{brand.phone || "Sin teléfono"}</p>
+                    {brand.notes && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{brand.notes}</p>}
+                  </div>
+                </Link>
                 <Link href={`/marcas/${brand.id}/editar`}>
                   <Button variant="ghost" size="icon" aria-label={`Editar ${brand.name}`}>
                     <Edit className="h-4 w-4" />
                   </Button>
                 </Link>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                <Link href={`/marcas/${brand.id}`}>
+                  <Button variant="outline" size="sm">Ver</Button>
+                </Link>
+                <Link href={`/marcas/${brand.id}/editar`}>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Edit className="h-4 w-4" />
+                    Editar
+                  </Button>
+                </Link>
+                {brand.is_active && (
+                  <form action={deactivateBrandAction}>
+                    <input type="hidden" name="id" value={brand.id} />
+                    <DeleteSubmitButton
+                      label="Desactivar"
+                      title="Desactivar marca"
+                      description="La marca no aparecerá para nuevos llenados, pero se conserva su historial."
+                      confirmLabel="Desactivar"
+                    />
+                  </form>
+                )}
               </div>
             </CardContent>
           </Card>

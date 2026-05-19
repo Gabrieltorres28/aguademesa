@@ -44,6 +44,7 @@ export interface OwnClient {
   bottles_in_street: number
   balance: number
   notes: string | null
+  is_active: boolean
   created_at: string
 }
 

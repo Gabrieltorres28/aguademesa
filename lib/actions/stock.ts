@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { hasSupabaseEnv } from "@/lib/supabase/config"
 import { numberFromForm, requireSupabase, stringFromForm } from "./utils"
@@ -34,4 +35,15 @@ export async function updateStockItemAction(formData: FormData) {
     min_stock: numberFromForm(formData, "min_stock"),
   }).eq("id", stringFromForm(formData, "id"))
   revalidatePath("/stock")
+}
+
+export async function deleteStockItemAction(formData: FormData) {
+  const { supabase } = await requireSupabase()
+  const id = stringFromForm(formData, "id")
+  if (!id) redirect("/stock")
+  const { error } = await supabase.from("stock_items").delete().eq("id", id)
+  if (error) redirect(`/stock?error=${encodeURIComponent(error.message)}`)
+  revalidatePath("/stock")
+  revalidatePath("/reportes")
+  redirect("/stock?deleted=1")
 }

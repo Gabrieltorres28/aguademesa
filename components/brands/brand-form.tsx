@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -88,9 +89,13 @@ export function BrandForm({
       {brand?.is_active && (
         <form action={deactivateBrandAction}>
           <input type="hidden" name="id" value={brand.id} />
-          <Button type="submit" variant="outline" className="w-full">
-            Desactivar marca
-          </Button>
+          <DeleteSubmitButton
+            label="Desactivar marca"
+            title="Desactivar marca"
+            description="La marca no aparecerá para nuevos llenados, pero se conserva su historial."
+            confirmLabel="Desactivar"
+            className="w-full text-destructive hover:text-destructive"
+          />
         </form>
       )}
     </div>

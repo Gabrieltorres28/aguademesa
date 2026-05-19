@@ -48,7 +48,7 @@ export function BidonesModule({ fillings = [], stockItems = [], ownClients = [] 
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Bidones</h1>
-          <p className="text-sm text-muted-foreground">Bidones propios y procesados para terceros</p>
+          <p className="text-sm text-muted-foreground">Bidones propios y procesados para marcas/revendedores</p>
         </div>
       </div>
       
@@ -121,10 +121,10 @@ export function BidonesModule({ fillings = [], stockItems = [], ownClients = [] 
         />
       </div>
       
-      {/* Bidones procesados para terceros */}
+      {/* Bidones procesados para marcas/revendedores */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Bidones procesados para terceros</CardTitle>
+          <CardTitle className="text-base">Bidones procesados para marcas/revendedores</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {filteredProcesados.map((procesado) => (

@@ -1,17 +1,17 @@
 "use client"
 
-import { 
-  DollarSign, 
-  Droplets, 
-  TrendingUp, 
-  AlertTriangle,
-  Package,
-  Receipt,
-  Plus,
-  Factory,
-  BarChart3,
+import {
   ArrowRight,
-  Clock
+  BarChart3,
+  DollarSign,
+  Droplets,
+  Factory,
+  Package,
+  Plus,
+  Receipt,
+  Truck,
+  Users,
+  Wallet,
 } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,219 +21,156 @@ import { formatCurrency } from "@/lib/data"
 import type { DashboardData } from "@/lib/actions/dashboard"
 
 export function Dashboard({ dashboard }: { dashboard: DashboardData }) {
-  const ultimosLlenados = dashboard.ultimosLlenados.slice(0, 3)
-  const hasPending = dashboard.pendientesMarcas + dashboard.pendientesClientes > 0
-  
+  const today = new Intl.DateTimeFormat("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date())
+
   return (
     <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">18 de mayo de 2026</p>
+        <h1 className="text-2xl font-bold text-foreground">Inicio</h1>
+        <p className="text-sm capitalize text-muted-foreground">{today}</p>
       </div>
-      
-      {/* Alerta de cuentas por servicio */}
-      {hasPending && (
-        <Card className="border-warning/50 bg-warning/5">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="font-medium text-foreground">Llenados pendientes de cobro</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Hay saldos pendientes por llenados o repartos propios.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Tarjetas de resumen */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard 
-          title="Llenados hoy"
-          value={dashboard.bidonesLlenadosHoy.toString()}
-          icon={Droplets}
-          variant="accent"
-        />
-        <StatCard 
-          title="Pendiente llenados"
-          value={formatCurrency(dashboard.pendientesMarcas)}
-          icon={Receipt}
-          variant="warning"
-        />
-        <StatCard 
-          title="Revendedores"
-          value="--"
-          icon={Factory}
-          variant="primary"
-        />
-        <StatCard 
-          title="Producción día"
-          value={dashboard.bidonesLlenadosHoy.toString()}
-          icon={BarChart3}
-          variant="success"
-        />
-        <StatCard 
-          title="Ingresos llenado"
-          value={formatCurrency(dashboard.ingresosHoy)}
-          icon={DollarSign}
-          variant="primary"
-        />
-        <StatCard 
-          title="Gastos mes"
-          value={formatCurrency(dashboard.gastosMes)}
-          icon={TrendingUp}
-          variant="destructive"
-        />
-        <StatCard 
-          title="Stock crítico"
-          value={dashboard.stockCritico.toString()}
-          icon={Package}
-          variant={dashboard.stockCritico > 0 ? "destructive" : "success"}
-        />
-        <StatCard 
-          title="Ctas. a cobrar"
-          value={formatCurrency(dashboard.pendientesClientes)}
-          icon={Receipt}
-          variant="warning"
-        />
-      </div>
-      
-      {/* Accesos rápidos */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Link href="/llenados/nuevo">
-          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
-            <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Plus className="h-6 w-6 text-primary" />
-              </div>
-              <span className="font-medium text-sm">Nuevo llenado</span>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/caja/nuevo">
-          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
-            <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
-              <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-accent" />
-              </div>
-              <span className="font-medium text-sm">Registrar gasto</span>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/repartos/nuevo">
-          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
-            <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
-              <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
-                <Factory className="h-6 w-6 text-success" />
-              </div>
-              <span className="font-medium text-sm">Nuevo reparto</span>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/bidones">
-          <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
-            <CardContent className="p-4 flex flex-col items-center justify-center gap-2 text-center">
-              <div className="h-12 w-12 rounded-full bg-warning/10 flex items-center justify-center">
-                <Droplets className="h-6 w-6 text-warning" />
-              </div>
-              <span className="font-medium text-sm">Bidones</span>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-      
-      {/* Últimos movimientos */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Últimos llenados</CardTitle>
-            <Link href="/llenados">
-              <Button variant="ghost" size="sm" className="text-xs">
-                Ver todos <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {ultimosLlenados.map((llenado) => (
-            <div 
-              key={llenado.id} 
-              className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <Droplets className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-sm break-words">{llenado.brands?.name || "Sin marca"}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>{llenado.filling_date}</span>
-                    <span>•</span>
-                    <span>{llenado.filled_qty} llenados</span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-left min-[420px]:text-right">
-                <p className="font-semibold text-sm">{formatCurrency(Number(llenado.total_amount))}</p>
-                <Badge 
-                  variant={
-                    llenado.payment_status === 'PAGADO' ? 'default' : 
-                    llenado.payment_status === 'PARCIAL' ? 'secondary' : 'outline'
-                  }
-                  className="text-[10px] mt-1"
-                >
-                  {llenado.payment_status === 'PAGADO' ? 'Pagado' : 
-                   llenado.payment_status === 'PARCIAL' ? 'Parcial' : 'Pendiente'}
-                </Badge>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-      
-      {/* Estado de clientes principales */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Últimos movimientos</CardTitle>
-            <Link href="/marcas">
-              <Button variant="ghost" size="sm" className="text-xs">
-                Ver todos <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2">
-            {dashboard.ultimosMovimientos.map((movimiento) => (
-              <Link key={movimiento.id} href="/caja">
-                <div className="p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{movimiento.description}</span>
-                    <Badge variant={movimiento.type === "INGRESO" ? "default" : "outline"} className="text-[10px]">{movimiento.type}</Badge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-muted-foreground text-xs">Categoría</p>
-                      <p className="font-semibold">{movimiento.category}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">Monto</p>
-                      <p className="font-semibold">{formatCurrency(Number(movimiento.amount))}</p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+
+      <DashboardSection title="Reparto propio">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <ActionCard href="/clientes/nuevo" label="Nuevo cliente" icon={Users} />
+          <ActionCard href="/repartos/nuevo" label="Nuevo reparto" icon={Truck} />
+          <StatCard title="Clientes con deuda" value={dashboard.clientesConDeuda.toString()} icon={Receipt} variant="warning" />
+          <StatCard title="Bidones en calle" value={dashboard.bidonesEnCalle.toString()} icon={Package} variant="primary" />
+        </div>
+        <RecentDeliveries dashboard={dashboard} />
+      </DashboardSection>
+
+      <DashboardSection title="Llenado para marcas">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <ActionCard href="/marcas/nueva" label="Nueva marca" icon={Factory} />
+          <ActionCard href="/llenados/nuevo" label="Nuevo llenado" icon={Droplets} />
+          <StatCard title="Marcas con saldo" value={dashboard.marcasConSaldo.toString()} icon={Receipt} variant="warning" />
+          <StatCard title="Llenados hoy" value={dashboard.bidonesLlenadosHoy.toString()} icon={Droplets} variant="accent" />
+        </div>
+        <RecentFillings dashboard={dashboard} />
+      </DashboardSection>
+
+      <DashboardSection title="Control general">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <StatCard title="Ingresos del día" value={formatCurrency(dashboard.ingresosHoy)} icon={DollarSign} variant="success" />
+          <StatCard title="Gastos del día" value={formatCurrency(dashboard.gastosHoy)} icon={Wallet} variant="destructive" />
+          <StatCard title="Balance" value={formatCurrency(dashboard.balanceHoy)} icon={BarChart3} variant={dashboard.balanceHoy >= 0 ? "success" : "destructive"} />
+          <StatCard title="Stock crítico" value={dashboard.stockCritico.toString()} icon={Package} variant={dashboard.stockCritico > 0 ? "destructive" : "success"} />
+          <ActionCard href="/reportes" label="Reportes" icon={BarChart3} />
+        </div>
+      </DashboardSection>
     </div>
   )
+}
+
+function DashboardSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+function ActionCard({ href, label, icon: Icon }: { href: string; label: string; icon: React.ElementType }) {
+  return (
+    <Link href={href}>
+      <Card className="h-full transition-colors hover:bg-muted/50">
+        <CardContent className="flex min-h-28 flex-col items-center justify-center gap-2 p-4 text-center">
+          <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+            <Icon className="h-6 w-6 text-primary" />
+          </div>
+          <span className="text-sm font-medium">{label}</span>
+        </CardContent>
+      </Card>
+    </Link>
+  )
+}
+
+function RecentDeliveries({ dashboard }: { dashboard: DashboardData }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">Últimos repartos</CardTitle>
+          <Link href="/repartos">
+            <Button variant="ghost" size="sm" className="text-xs">
+              Ver todos <ArrowRight className="ml-1 h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {dashboard.ultimosRepartos.map((delivery) => (
+          <Link key={delivery.id} href={`/repartos/${delivery.id}`}>
+            <div className="rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/60">
+              <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-medium">{delivery.own_clients?.name || "Cliente propio"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {delivery.delivery_date} · {delivery.delivered_qty} entregados · {delivery.returned_empty_qty} vacíos
+                  </p>
+                </div>
+                <PaymentBadge status={delivery.payment_status} />
+              </div>
+            </div>
+          </Link>
+        ))}
+        {dashboard.ultimosRepartos.length === 0 && <EmptyLine text="No hay repartos propios cargados." />}
+      </CardContent>
+    </Card>
+  )
+}
+
+function RecentFillings({ dashboard }: { dashboard: DashboardData }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">Últimos llenados</CardTitle>
+          <Link href="/llenados">
+            <Button variant="ghost" size="sm" className="text-xs">
+              Ver todos <ArrowRight className="ml-1 h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {dashboard.ultimosLlenados.map((filling) => (
+          <Link key={filling.id} href={`/llenados/${filling.id}`}>
+            <div className="rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/60">
+              <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-medium">{filling.brands?.name || "Marca / revendedor"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {filling.filling_date} · {filling.filled_qty} bidones llenados
+                  </p>
+                </div>
+                <PaymentBadge status={filling.payment_status} />
+              </div>
+            </div>
+          </Link>
+        ))}
+        {dashboard.ultimosLlenados.length === 0 && <EmptyLine text="No hay llenados para marcas cargados." />}
+      </CardContent>
+    </Card>
+  )
+}
+
+function PaymentBadge({ status }: { status: string }) {
+  return (
+    <Badge variant={status === "PAGADO" ? "default" : status === "PARCIAL" ? "secondary" : "outline"} className="w-fit text-[10px]">
+      {status === "PAGADO" ? "Pagado" : status === "PARCIAL" ? "Parcial" : "Pendiente"}
+    </Badge>
+  )
+}
+
+function EmptyLine({ text }: { text: string }) {
+  return <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">{text}</div>
 }
 
 interface StatCardProps {
@@ -269,7 +206,7 @@ function StatCard({ title, value, icon: Icon, variant = 'default' }: StatCardPro
           <Icon className={`h-4 w-4 ${iconStyles[variant]}`} />
           <span className="text-[11px] text-muted-foreground font-medium truncate">{title}</span>
         </div>
-        <p className="text-lg md:text-xl font-bold text-foreground">{value}</p>
+        <p className="safe-number text-lg font-bold text-foreground md:text-xl">{value}</p>
       </CardContent>
     </Card>
   )

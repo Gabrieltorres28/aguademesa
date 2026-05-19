@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/app-layout"
-import { ReportesModule } from "@/components/reportes-module"
+import { ReportesRealModule } from "@/components/reportes-real-module"
 import { listBrands } from "@/lib/actions/brands"
 import { listCashMovements } from "@/lib/actions/cash"
 import { listDeliveries, listOwnClients } from "@/lib/actions/deliveries"
@@ -18,7 +18,7 @@ export default async function ReportesPage() {
 
   return (
     <AppLayout>
-      <ReportesModule
+      <ReportesRealModule
         brands={brands}
         fillings={fillings}
         deliveries={deliveries}

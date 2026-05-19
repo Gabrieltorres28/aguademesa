@@ -136,6 +136,31 @@
   }
 }
 
+@layer utilities {
+  .safe-number {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.15;
+  }
+
+  @media (max-width: 420px) {
+    .safe-number {
+      font-size: clamp(1rem, 5vw, 1.25rem);
+    }
+  }
+}
+
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(240%);
+  }
+}
+
 /* Custom scrollbar for mobile */
 ::-webkit-scrollbar {
   width: 4px;

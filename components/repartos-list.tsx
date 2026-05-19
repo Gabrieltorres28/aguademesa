@@ -2,13 +2,15 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Plus, Search, Droplets, Clock } from "lucide-react"
+import { Edit, Plus, Search, Droplets, Clock } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatCurrency } from "@/lib/data"
+import { deleteFillingAction } from "@/lib/actions/fillings"
+import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Brand, Filling } from "@/lib/types"
 
 export function RepartosList({ fillings = [], brands = [] }: { fillings?: Filling[], brands?: Brand[] }) {
@@ -50,19 +52,19 @@ export function RepartosList({ fillings = [], brands = [] }: { fillings?: Fillin
         <Card>
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">Llenados hoy</p>
-            <p className="text-xl font-bold break-words">{llenadosHoy.length}</p>
+            <p className="safe-number text-xl font-bold">{llenadosHoy.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">Bidones llenados hoy</p>
-            <p className="text-lg font-bold text-success break-words min-[380px]:text-xl">{bidonesLlenadosHoy}</p>
+            <p className="safe-number text-lg font-bold text-success min-[380px]:text-xl">{bidonesLlenadosHoy}</p>
           </CardContent>
         </Card>
         <Card className="min-[380px]:col-span-2 md:col-span-1">
           <CardContent className="p-3">
             <p className="text-xs text-muted-foreground">Pendiente de cobro</p>
-            <p className="text-lg font-bold text-warning break-words min-[380px]:text-xl">{formatCurrency(totalPendienteHoy)}</p>
+            <p className="safe-number text-lg font-bold text-warning min-[380px]:text-xl">{formatCurrency(totalPendienteHoy)}</p>
           </CardContent>
         </Card>
       </div>
@@ -107,8 +109,7 @@ export function RepartosList({ fillings = [], brands = [] }: { fillings?: Fillin
       {/* Lista de llenados */}
       <div className="space-y-3">
         {filteredLlenados.map((llenado) => (
-          <Link key={llenado.id} href={`/llenados/${llenado.id}`}>
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+            <Card key={llenado.id} className="hover:bg-muted/50 transition-colors">
               <CardContent className="p-3 min-[380px]:p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
                   <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -151,13 +152,28 @@ export function RepartosList({ fillings = [], brands = [] }: { fillings?: Fillin
                     </div>
                   </div>
                   <div className="min-w-0 rounded-lg bg-muted/40 p-3 text-left md:bg-transparent md:p-0 md:text-right md:shrink-0">
-                    <p className="font-bold text-base break-words min-[380px]:text-lg">{formatCurrency(Number(llenado.total_amount))}</p>
+                    <p className="safe-number text-base font-bold min-[380px]:text-lg">{formatCurrency(Number(llenado.total_amount))}</p>
                     {Number(llenado.paid_amount) > 0 && Number(llenado.paid_amount) < Number(llenado.total_amount) && (
                       <p className="text-xs text-muted-foreground break-words">
                         Cobrado: {formatCurrency(Number(llenado.paid_amount))}
                       </p>
                     )}
                   </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                  <Link href={`/llenados/${llenado.id}`}>
+                    <Button variant="outline" size="sm">Ver</Button>
+                  </Link>
+                  <Link href={`/llenados/${llenado.id}/editar`}>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Edit className="h-4 w-4" />
+                      Editar
+                    </Button>
+                  </Link>
+                  <form action={deleteFillingAction} onClick={(event) => event.stopPropagation()}>
+                    <input type="hidden" name="id" value={llenado.id} />
+                    <DeleteSubmitButton />
+                  </form>
                 </div>
                 {llenado.notes && (
                   <p className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
@@ -166,7 +182,6 @@ export function RepartosList({ fillings = [], brands = [] }: { fillings?: Fillin
                 )}
               </CardContent>
             </Card>
-          </Link>
         ))}
         {filteredLlenados.length === 0 && (
           <Card>

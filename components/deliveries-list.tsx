@@ -1,11 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { Plus, Truck } from "lucide-react"
+import { Edit, Plus, Truck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/data"
+import { deleteDeliveryAction } from "@/lib/actions/deliveries"
+import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Delivery } from "@/lib/types"
 
 export function DeliveriesList({ deliveries = [] }: { deliveries?: Delivery[] }) {
@@ -38,11 +40,26 @@ export function DeliveriesList({ deliveries = [] }: { deliveries?: Delivery[] })
                   </div>
                 </div>
                 <div className="text-left min-[420px]:text-right">
-                  <p className="font-bold">{formatCurrency(Number(delivery.total_amount))}</p>
+                  <p className="safe-number font-bold">{formatCurrency(Number(delivery.total_amount))}</p>
                   <Badge variant={delivery.payment_status === "PAGADO" ? "default" : delivery.payment_status === "PARCIAL" ? "secondary" : "outline"} className="text-[10px]">
                     {delivery.payment_status === "PAGADO" ? "Pagado" : delivery.payment_status === "PARCIAL" ? "Parcial" : "Pendiente"}
                   </Badge>
                 </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                <Link href={`/repartos/${delivery.id}`}>
+                  <Button variant="outline" size="sm">Ver</Button>
+                </Link>
+                <Link href={`/repartos/${delivery.id}/editar`}>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Edit className="h-4 w-4" />
+                    Editar
+                  </Button>
+                </Link>
+                <form action={deleteDeliveryAction}>
+                  <input type="hidden" name="id" value={delivery.id} />
+                  <DeleteSubmitButton />
+                </form>
               </div>
             </CardContent>
           </Card>

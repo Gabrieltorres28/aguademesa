@@ -29,7 +29,7 @@ export function ClientesList({ brands = [], ownClients = [] }: { brands?: Brand[
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Marcas y clientes</h1>
+        <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
         <p className="text-sm text-muted-foreground">Cuentas a cobrar por servicio de llenado y operación propia</p>
       </div>
       

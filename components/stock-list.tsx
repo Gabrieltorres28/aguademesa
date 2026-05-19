@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import { createStockItemAction, updateStockItemAction } from "@/lib/actions/stock"
+import { createStockItemAction, deleteStockItemAction, updateStockItemAction } from "@/lib/actions/stock"
+import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { StockItem } from "@/lib/types"
 
 export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
@@ -24,9 +25,14 @@ export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
   return (
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Stock</h1>
-        <p className="text-sm text-muted-foreground">Control de inventario</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Stock</h1>
+          <p className="text-sm text-muted-foreground">Control de inventario</p>
+        </div>
+        <a href="#nuevo-stock">
+          <Button size="sm">Nuevo</Button>
+        </a>
       </div>
       
       {/* Alertas */}
@@ -60,7 +66,7 @@ export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
             <div className="h-8 w-8 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-1">
               <Check className="h-4 w-4 text-success" />
             </div>
-            <p className="text-lg font-bold">{stockItems.filter(p => getEstado(p) === 'normal').length}</p>
+            <p className="safe-number text-lg font-bold">{stockItems.filter(p => getEstado(p) === 'normal').length}</p>
             <p className="text-xs text-muted-foreground">Normal</p>
           </CardContent>
         </Card>
@@ -69,7 +75,7 @@ export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
             <div className="h-8 w-8 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-1">
               <AlertCircle className="h-4 w-4 text-warning" />
             </div>
-            <p className="text-lg font-bold">{productosBajos.length}</p>
+            <p className="safe-number text-lg font-bold">{productosBajos.length}</p>
             <p className="text-xs text-muted-foreground">Bajo</p>
           </CardContent>
         </Card>
@@ -78,7 +84,7 @@ export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
             <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-1">
               <AlertTriangle className="h-4 w-4 text-destructive" />
             </div>
-            <p className="text-lg font-bold">{productosCriticos.length}</p>
+            <p className="safe-number text-lg font-bold">{productosCriticos.length}</p>
             <p className="text-xs text-muted-foreground">Crítico</p>
           </CardContent>
         </Card>
@@ -105,7 +111,7 @@ export function StockList({ stockItems = [] }: { stockItems?: StockItem[] }) {
         )}
       </div>
 
-      <Card>
+      <Card id="nuevo-stock">
         <CardHeader><CardTitle className="text-base">Nuevo item de stock</CardTitle></CardHeader>
         <CardContent>
           <form action={createStockItemAction} className="grid gap-3 md:grid-cols-5">
@@ -161,7 +167,7 @@ function ProductoCard({ producto }: ProductoCardProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Stock actual</span>
-            <span className="font-bold text-lg">{producto.current_stock} {producto.unit}</span>
+            <span className="safe-number text-right text-lg font-bold">{producto.current_stock} {producto.unit}</span>
           </div>
           
           <div className="relative">
@@ -177,6 +183,10 @@ function ProductoCard({ producto }: ProductoCardProps) {
           <Input name="current_stock" type="number" defaultValue={producto.current_stock} aria-label="Stock actual" />
           <Input name="min_stock" type="number" defaultValue={producto.min_stock} aria-label="Stock mínimo" />
           <Button type="submit" variant="outline">Editar</Button>
+        </form>
+        <form action={deleteStockItemAction} className="mt-2">
+          <input type="hidden" name="id" value={producto.id} />
+          <DeleteSubmitButton />
         </form>
       </CardContent>
     </Card>

@@ -41,8 +41,12 @@ create table if not exists public.own_clients (
   bottles_in_street integer not null default 0 check (bottles_in_street >= 0),
   balance numeric(12,2) not null default 0,
   notes text,
+  is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table public.own_clients
+add column if not exists is_active boolean not null default true;
 
 create table if not exists public.deliveries (
   id uuid primary key default gen_random_uuid(),

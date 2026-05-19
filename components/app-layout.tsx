@@ -1,9 +1,10 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Droplets, Users, Package, Wallet, BarChart3, Menu, Settings } from "lucide-react"
+import { Home, Droplets, Users, Package, Wallet, BarChart3, Menu, Settings, Truck, MoreHorizontal, Factory } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -11,11 +12,18 @@ import { signOutAction } from "@/lib/actions/auth"
 
 const navItems = [
   { href: "/", label: "Inicio", icon: Home },
+  { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/repartos", label: "Repartos", icon: Truck },
   { href: "/llenados", label: "Llenados", icon: Droplets },
-  { href: "/marcas", label: "Marcas", icon: Users },
-  { href: "/stock", label: "Stock", icon: Package },
   { href: "/caja", label: "Caja", icon: Wallet },
-  { href: "/configuracion", label: "Config", icon: Settings },
+  { href: "/mas", label: "Más", icon: MoreHorizontal },
+]
+
+const moreItems = [
+  { href: "/marcas", label: "Marcas", icon: Factory },
+  { href: "/stock", label: "Stock", icon: Package },
+  { href: "/reportes", label: "Reportes", icon: BarChart3 },
+  { href: "/configuracion", label: "Configuración", icon: Settings },
 ]
 
 function BrandLogo({ compact = false }: { compact?: boolean }) {
@@ -51,7 +59,10 @@ export function MobileNav() {
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(`${item.href}/`)) ||
+            (item.href === "/mas" && moreItems.some((moreItem) => pathname === moreItem.href || pathname.startsWith(`${moreItem.href}/`)))
           return (
             <Link
               key={item.href}
@@ -85,7 +96,7 @@ export function DesktopSidebar() {
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href
+          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`))
           return (
             <Link
               key={item.href}
@@ -103,19 +114,26 @@ export function DesktopSidebar() {
           )
         })}
         
-        <div className="pt-4 border-t border-border mt-4">
-          <Link
-            href="/reportes"
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-              pathname === "/reportes"
-                ? "text-primary-foreground bg-primary" 
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            )}
-          >
-            <BarChart3 className="h-5 w-5" />
-            <span className="font-medium">Reportes</span>
-          </Link>
+        <div className="pt-4 border-t border-border mt-4 space-y-1">
+          {moreItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                  isActive
+                    ? "text-primary-foreground bg-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            )
+          })}
         </div>
       </nav>
       
@@ -147,9 +165,9 @@ export function MobileHeader() {
             <div className="py-4">
               <h2 className="text-lg font-semibold mb-4">Menú</h2>
               <nav className="space-y-2">
-                {[...navItems, { href: "/reportes", label: "Reportes", icon: BarChart3 }].map((item) => {
+                {[...navItems, ...moreItems].map((item) => {
                   const Icon = item.icon
-                  const isActive = pathname === item.href
+                  const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`))
                   return (
                     <Link
                       key={item.href}
@@ -183,6 +201,31 @@ export function MobileHeader() {
 }
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const [isNavigating, setIsNavigating] = useState(false)
+
+  useEffect(() => {
+    setIsNavigating(false)
+  }, [pathname])
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      const anchor = target?.closest("a")
+      if (!anchor?.href || anchor.target === "_blank") return
+
+      const nextUrl = new URL(anchor.href)
+      if (nextUrl.origin !== window.location.origin) return
+      if (nextUrl.pathname === window.location.pathname && nextUrl.search === window.location.search) return
+
+      setIsNavigating(true)
+    }
+
+    document.addEventListener("click", handleClick)
+    return () => document.removeEventListener("click", handleClick)
+  }, [])
+
   return (
     <div className="min-h-screen bg-background">
       <DesktopSidebar />
@@ -191,6 +234,28 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <MobileNav />
+      {isNavigating && <NavigationLoader />}
+    </div>
+  )
+}
+
+function NavigationLoader() {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/70 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-4 rounded-lg border bg-card p-6 shadow-lg">
+        <div className="relative size-16 animate-pulse">
+          <Image
+            src="/images/logo-aguademesa.png"
+            alt="Agua de Mesa"
+            fill
+            sizes="64px"
+            className="object-contain"
+          />
+        </div>
+        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+          <div className="h-full w-1/2 animate-[loading-bar_1s_ease-in-out_infinite] rounded-full bg-primary" />
+        </div>
+      </div>
     </div>
   )
 }

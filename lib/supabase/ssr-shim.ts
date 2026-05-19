@@ -50,6 +50,11 @@ class QueryBuilder {
     return this
   }
 
+  delete() {
+    this.method = "DELETE"
+    return this
+  }
+
   eq(column: string, value: string) {
     this.params.set(column, `eq.${value}`)
     return this

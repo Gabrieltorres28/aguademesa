@@ -1,12 +1,14 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Droplets, User, Package, FileText } from "lucide-react"
+import { ArrowLeft, Droplets, Edit, User, Package, FileText } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/data"
-import { registerFillingPaymentAction } from "@/lib/actions/fillings"
+import { deleteFillingAction, registerFillingPaymentAction } from "@/lib/actions/fillings"
+import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Filling } from "@/lib/types"
 
 interface RepartoDetailProps {
@@ -15,6 +17,7 @@ interface RepartoDetailProps {
 
 export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { filling?: Filling | null }) {
   const llenado = filling
+  const [paymentAmount, setPaymentAmount] = useState(String(Number(llenado?.paid_amount || 0)))
   
   if (!llenado) {
     return (
@@ -23,6 +26,12 @@ export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { fil
       </div>
     )
   }
+
+  const totalAmount = Number(llenado.total_amount || 0)
+  const currentPaid = Number(llenado.paid_amount || 0)
+  const nextPaid = Number(paymentAmount) || 0
+  const nextPending = Math.max(totalAmount - nextPaid, 0)
+  const nextStatus = nextPaid >= totalAmount && totalAmount > 0 ? "PAGADO" : nextPaid > 0 ? "PARCIAL" : "PENDIENTE"
   
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -35,7 +44,7 @@ export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { fil
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold text-foreground break-words min-[380px]:text-2xl">Llenado #{llenado.id}</h1>
+            <h1 className="text-xl font-bold text-foreground break-words min-[380px]:text-2xl">Llenado #{llenado.id.slice(0, 8)}</h1>
             <Badge 
               variant={
                 llenado.payment_status === 'PAGADO' ? 'default' : 
@@ -48,6 +57,18 @@ export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { fil
           </div>
           <p className="text-sm text-muted-foreground">{llenado.filling_date}</p>
         </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Link href={`/llenados/${llenado.id}/editar`}>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Edit className="h-4 w-4" />
+            Editar
+          </Button>
+        </Link>
+        <form action={deleteFillingAction}>
+          <input type="hidden" name="id" value={llenado.id} />
+          <DeleteSubmitButton />
+        </form>
       </div>
       
       {/* Info principal */}
@@ -97,15 +118,15 @@ export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { fil
         <CardContent>
           <div className="grid grid-cols-1 gap-3 text-center min-[360px]:grid-cols-3 min-[420px]:gap-4">
             <div className="min-w-0 p-3 bg-success/10 rounded-lg">
-              <p className="text-2xl font-bold text-success break-words">{llenado.received_qty}</p>
+              <p className="safe-number text-2xl font-bold text-success">{llenado.received_qty}</p>
               <p className="text-xs text-muted-foreground">Recibidos</p>
             </div>
             <div className="min-w-0 p-3 bg-accent/10 rounded-lg">
-              <p className="text-2xl font-bold text-accent break-words">{llenado.filled_qty}</p>
+              <p className="safe-number text-2xl font-bold text-accent">{llenado.filled_qty}</p>
               <p className="text-xs text-muted-foreground">Llenados</p>
             </div>
             <div className="min-w-0 p-3 rounded-lg bg-muted">
-              <p className="text-2xl font-bold break-words text-muted-foreground">
+              <p className="safe-number text-2xl font-bold text-muted-foreground">
                 {llenado.withdrawn_qty}
               </p>
               <p className="text-xs text-muted-foreground">Retirados</p>
@@ -122,38 +143,60 @@ export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { fil
         <CardContent className="space-y-3">
           <div className="flex flex-col gap-1 p-3 bg-muted/50 rounded-lg min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
             <span className="text-sm text-muted-foreground min-[420px]:text-base">Precio por llenado</span>
-            <span className="text-lg font-bold break-words min-[420px]:text-xl">{formatCurrency(Number(llenado.unit_price))}</span>
+            <span className="safe-number text-lg font-bold min-[420px]:text-xl">{formatCurrency(Number(llenado.unit_price))}</span>
           </div>
           <div className="flex flex-col gap-1 p-3 bg-success/10 rounded-lg min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
             <span className="text-sm text-muted-foreground min-[420px]:text-base">Total a cobrar</span>
-            <span className="text-lg font-bold text-success break-words min-[420px]:text-xl">{formatCurrency(Number(llenado.total_amount))}</span>
+            <span className="safe-number text-lg font-bold text-success min-[420px]:text-xl">{formatCurrency(totalAmount)}</span>
           </div>
           <div className="flex flex-col gap-1 p-3 bg-muted/50 rounded-lg min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
             <span className="text-sm text-muted-foreground min-[420px]:text-base">Monto cobrado</span>
-            <span className="text-lg font-bold break-words min-[420px]:text-xl">{formatCurrency(Number(llenado.paid_amount))}</span>
+            <span className="safe-number text-lg font-bold min-[420px]:text-xl">{formatCurrency(currentPaid)}</span>
           </div>
           {Number(llenado.paid_amount) < Number(llenado.total_amount) && (
             <div className="flex flex-col gap-1 p-3 bg-warning/10 rounded-lg min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <span className="text-sm text-muted-foreground min-[420px]:text-base">Pendiente de cobro</span>
-              <span className="text-lg font-bold text-warning break-words min-[420px]:text-xl">
-                {formatCurrency(Number(llenado.total_amount) - Number(llenado.paid_amount))}
+              <span className="safe-number text-lg font-bold text-warning min-[420px]:text-xl">
+                {formatCurrency(totalAmount - currentPaid)}
               </span>
             </div>
           )}
-          <form action={registerFillingPaymentAction} className="grid gap-2 rounded-lg border p-3 min-[420px]:grid-cols-[1fr_auto]">
+          <form action={registerFillingPaymentAction} className="space-y-3 rounded-lg border p-3">
             <input type="hidden" name="id" value={llenado.id} />
             <input type="hidden" name="brand_id" value={llenado.brand_id} />
             <input type="hidden" name="total_amount" value={llenado.total_amount} />
-            <input
-              name="paid_amount"
-              type="number"
-              min="0"
-              step="0.01"
-              defaultValue={Number(llenado.paid_amount)}
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-              aria-label="Monto cobrado"
-            />
-            <Button type="submit">Registrar pago</Button>
+            <div className="grid gap-2 min-[420px]:grid-cols-[1fr_auto]">
+              <input
+                name="paid_amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={paymentAmount}
+                onChange={(event) => setPaymentAmount(event.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                aria-label="Monto cobrado"
+              />
+              <Button type="submit" disabled={nextPaid > totalAmount}>Registrar pago</Button>
+            </div>
+            <div className="grid gap-3 rounded-lg bg-muted/50 p-3 min-[420px]:grid-cols-3">
+              <CalcItem label="Total" value={formatCurrency(totalAmount)} />
+              <CalcItem label="Cobrado" value={formatCurrency(nextPaid)} />
+              <CalcItem label="Pendiente" value={formatCurrency(nextPending)} strong />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <span className="text-sm text-muted-foreground">Estado automático</span>
+              <Badge variant={nextStatus === "PAGADO" ? "default" : nextStatus === "PARCIAL" ? "secondary" : "outline"}>
+                {nextStatus === "PAGADO" ? "Pagado" : nextStatus === "PARCIAL" ? "Parcial" : "Pendiente"}
+              </Badge>
+            </div>
+            {nextPaid > totalAmount && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                El monto cobrado no puede superar el total del llenado.
+              </div>
+            )}
+            <Button type="button" variant="outline" className="w-full" onClick={() => setPaymentAmount(String(totalAmount))}>
+              Marcar cobrado completo
+            </Button>
           </form>
         </CardContent>
       </Card>
@@ -172,6 +215,15 @@ export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { fil
           </CardContent>
         </Card>
       )}
+    </div>
+  )
+}
+
+function CalcItem({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`${strong ? "text-xl" : "text-base"} safe-number font-bold text-foreground`}>{value}</p>
     </div>
   )
 }
