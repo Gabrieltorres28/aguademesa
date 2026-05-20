@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BarChart3, Factory, Package, Settings } from "lucide-react"
+import { BarChart3, Factory, Package, Settings, Smartphone } from "lucide-react"
 import { AppLayout } from "@/components/app-layout"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -27,6 +27,12 @@ const items = [
     title: "Configuración",
     description: "Tema, cuenta y contraseña.",
     icon: Settings,
+  },
+  {
+    href: "/instalar",
+    title: "Instalar en mi celular",
+    description: "Agregar acceso directo a la pantalla principal.",
+    icon: Smartphone,
   },
 ]
 

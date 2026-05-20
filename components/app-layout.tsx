@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Droplets, Users, Package, Wallet, BarChart3, Menu, Settings, Truck, MoreHorizontal, Factory } from "lucide-react"
+import { Home, Droplets, Users, Package, Wallet, BarChart3, Menu, Settings, Truck, MoreHorizontal, Factory, Smartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -23,6 +23,7 @@ const moreItems = [
   { href: "/marcas", label: "Marcas", icon: Factory },
   { href: "/stock", label: "Stock", icon: Package },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
+  { href: "/instalar", label: "Instalar", icon: Smartphone },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ]
 

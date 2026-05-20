@@ -17,10 +17,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Agua de Mesa - Sistema de Gestión',
   description: 'Sistema de gestión para Agua de Mesa Dos Hermanas. Control de llenados por marca, producción, stock propio, cuentas a cobrar y operación diaria.',
+  manifest: '/manifest.webmanifest',
+  applicationName: 'Gestión de Reparto',
+  appleWebApp: {
+    capable: true,
+    title: 'Reparto',
+    statusBarStyle: 'default',
+  },
   icons: {
-    icon: '/images/logo-aguademesa.png',
-    shortcut: '/images/logo-aguademesa.png',
-    apple: '/images/logo-aguademesa.png',
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/icons/icon-192.png',
+    apple: '/apple-touch-icon.png',
   },
 }
 

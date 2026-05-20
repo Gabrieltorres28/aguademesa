@@ -25,7 +25,10 @@ export async function middleware(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser()
   const isLogin = request.nextUrl.pathname.startsWith("/login")
-  const isPublicAsset = request.nextUrl.pathname.startsWith("/_next") || request.nextUrl.pathname.startsWith("/images")
+  const isPublicAsset =
+    request.nextUrl.pathname.startsWith("/_next") ||
+    request.nextUrl.pathname.startsWith("/images") ||
+    request.nextUrl.pathname === "/manifest.webmanifest"
 
   if (!data.user && !isLogin && !isPublicAsset) {
     const redirectUrl = request.nextUrl.clone()
