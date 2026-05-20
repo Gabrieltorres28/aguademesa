@@ -29,41 +29,88 @@ export function Dashboard({ dashboard }: { dashboard: DashboardData }) {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Inicio</h1>
-        <p className="text-sm capitalize text-muted-foreground">{today}</p>
+      <div className="space-y-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Inicio</h1>
+          <p className="text-sm capitalize text-muted-foreground">{today}</p>
+        </div>
+        <PeriodSelector dashboard={dashboard} />
       </div>
+
+      <DashboardSection title="Resumen general">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatCard title="Ingresos" value={formatCurrency(dashboard.ingresosPeriodo)} icon={DollarSign} variant="success" />
+          <StatCard title="Gastos" value={formatCurrency(dashboard.gastosPeriodo)} icon={Wallet} variant="destructive" />
+          <StatCard title="Balance" value={formatCurrency(dashboard.balancePeriodo)} icon={BarChart3} variant={dashboard.balancePeriodo >= 0 ? "success" : "destructive"} />
+          <StatCard title="Pendiente" value={formatCurrency(dashboard.pendienteCobroPeriodo)} icon={Receipt} variant="warning" />
+        </div>
+      </DashboardSection>
 
       <DashboardSection title="Reparto propio">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <ActionCard href="/clientes/nuevo" label="Nuevo cliente" icon={Users} />
-          <ActionCard href="/repartos/nuevo" label="Nuevo reparto" icon={Truck} />
-          <StatCard title="Clientes con deuda" value={dashboard.clientesConDeuda.toString()} icon={Receipt} variant="warning" />
+          <StatCard title="Repartos" value={dashboard.repartosRegistrados.toString()} icon={Truck} variant="primary" />
+          <StatCard title="Entregados" value={dashboard.bidonesEntregados.toString()} icon={Package} variant="accent" />
           <StatCard title="Bidones en calle" value={dashboard.bidonesEnCalle.toString()} icon={Package} variant="primary" />
+          <StatCard title="Clientes con deuda" value={dashboard.clientesConDeuda.toString()} icon={Receipt} variant="warning" />
         </div>
         <RecentDeliveries dashboard={dashboard} />
       </DashboardSection>
 
       <DashboardSection title="Llenado para marcas">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <ActionCard href="/marcas/nueva" label="Nueva marca" icon={Factory} />
-          <ActionCard href="/llenados/nuevo" label="Nuevo llenado" icon={Droplets} />
+          <StatCard title="Llenados" value={dashboard.llenadosRegistrados.toString()} icon={Droplets} variant="accent" />
+          <StatCard title="Bidones llenados" value={dashboard.bidonesLlenadosPeriodo.toString()} icon={Droplets} variant="primary" />
           <StatCard title="Marcas con saldo" value={dashboard.marcasConSaldo.toString()} icon={Receipt} variant="warning" />
-          <StatCard title="Llenados hoy" value={dashboard.bidonesLlenadosHoy.toString()} icon={Droplets} variant="accent" />
+          <StatCard title="Pendiente llenados" value={formatCurrency(dashboard.pendientesMarcas)} icon={Receipt} variant="warning" />
         </div>
         <RecentFillings dashboard={dashboard} />
       </DashboardSection>
 
-      <DashboardSection title="Control general">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          <StatCard title="Ingresos del día" value={formatCurrency(dashboard.ingresosHoy)} icon={DollarSign} variant="success" />
-          <StatCard title="Gastos del día" value={formatCurrency(dashboard.gastosHoy)} icon={Wallet} variant="destructive" />
-          <StatCard title="Balance" value={formatCurrency(dashboard.balanceHoy)} icon={BarChart3} variant={dashboard.balanceHoy >= 0 ? "success" : "destructive"} />
-          <StatCard title="Stock crítico" value={dashboard.stockCritico.toString()} icon={Package} variant={dashboard.stockCritico > 0 ? "destructive" : "success"} />
-          <ActionCard href="/reportes" label="Reportes" icon={BarChart3} />
+      <DashboardSection title="Acciones rápidas">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <ActionCard href="/clientes/nuevo" label="Nuevo cliente" icon={Users} />
+          <ActionCard href="/repartos/nuevo" label="Nuevo reparto" icon={Truck} />
+          <ActionCard href="/marcas/nueva" label="Nueva marca" icon={Factory} />
+          <ActionCard href="/llenados/nuevo" label="Nuevo llenado" icon={Droplets} />
         </div>
       </DashboardSection>
+
+      <DashboardSection title="Actividad reciente">
+        <RecentMovements dashboard={dashboard} />
+      </DashboardSection>
     </div>
+  )
+}
+
+function PeriodSelector({ dashboard }: { dashboard: DashboardData }) {
+  const periodLinks = [
+    { href: "/?period=today", label: "Hoy", active: dashboard.period === "today" },
+    { href: "/?period=week", label: "Semana", active: dashboard.period === "week" },
+    { href: "/?period=month", label: "Mes", active: dashboard.period === "month" },
+  ]
+
+  return (
+    <Card>
+      <CardContent className="space-y-3 p-3">
+        <div className="flex flex-wrap gap-2">
+          {periodLinks.map((item) => (
+            <Link key={item.href} href={item.href}>
+              <Button variant={item.active ? "default" : "outline"} size="sm">{item.label}</Button>
+            </Link>
+          ))}
+          <Link href="/">
+            <Button variant="ghost" size="sm">Limpiar</Button>
+          </Link>
+        </div>
+        <form action="/" className="grid gap-2 min-[520px]:grid-cols-[1fr_1fr_auto]">
+          <input type="hidden" name="period" value="custom" />
+          <input name="from" type="date" defaultValue={dashboard.rangeFrom} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+          <input name="to" type="date" defaultValue={dashboard.rangeTo} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+          <Button type="submit" variant={dashboard.period === "custom" ? "default" : "outline"} size="sm">Aplicar</Button>
+        </form>
+        <p className="text-xs text-muted-foreground">Período activo: {dashboard.periodLabel}</p>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -80,11 +127,11 @@ function ActionCard({ href, label, icon: Icon }: { href: string; label: string; 
   return (
     <Link href={href}>
       <Card className="h-full transition-colors hover:bg-muted/50">
-        <CardContent className="flex min-h-28 flex-col items-center justify-center gap-2 p-4 text-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-            <Icon className="h-6 w-6 text-primary" />
+        <CardContent className="flex min-h-20 flex-col items-center justify-center gap-2 p-3 text-center">
+          <div className="flex size-9 items-center justify-center rounded-full bg-primary/10">
+            <Icon className="h-5 w-5 text-primary" />
           </div>
-          <span className="text-sm font-medium">{label}</span>
+          <span className="text-xs font-medium min-[380px]:text-sm">{label}</span>
         </CardContent>
       </Card>
     </Link>
@@ -156,6 +203,41 @@ function RecentFillings({ dashboard }: { dashboard: DashboardData }) {
           </Link>
         ))}
         {dashboard.ultimosLlenados.length === 0 && <EmptyLine text="No hay llenados para marcas cargados." />}
+      </CardContent>
+    </Card>
+  )
+}
+
+function RecentMovements({ dashboard }: { dashboard: DashboardData }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">Últimos movimientos de caja</CardTitle>
+          <Link href="/caja">
+            <Button variant="ghost" size="sm" className="text-xs">
+              Ver todos <ArrowRight className="ml-1 h-3 w-3" />
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {dashboard.ultimosMovimientos.map((movement) => (
+          <Link key={movement.id} href="/caja">
+            <div className="rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/60">
+              <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-medium">{movement.description}</p>
+                  <p className="text-xs text-muted-foreground">{movement.movement_date} · {movement.category}</p>
+                </div>
+                <p className={`safe-number text-sm font-bold ${movement.type === "INGRESO" ? "text-success" : "text-destructive"}`}>
+                  {movement.type === "INGRESO" ? "+" : "-"}{formatCurrency(Number(movement.amount || 0))}
+                </p>
+              </div>
+            </div>
+          </Link>
+        ))}
+        {dashboard.ultimosMovimientos.length === 0 && <EmptyLine text="No hay movimientos de caja cargados." />}
       </CardContent>
     </Card>
   )

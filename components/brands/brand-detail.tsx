@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/data"
+import { WhatsAppButton } from "@/components/shared/whatsapp-button"
+import { formatDateDisplay, formatMoney, todayIso } from "@/lib/client/format"
 import { deactivateBrandAction, deleteBrandAction, reactivateBrandAction } from "@/lib/actions/brands"
 import type { Brand, Filling } from "@/lib/types"
 
@@ -16,6 +18,7 @@ export function BrandDetail({ brand, fillings }: { brand: Brand; fillings: Filli
     0
   )
   const paidTotal = brandFillings.reduce((acc, filling) => acc + Number(filling.paid_amount || 0), 0)
+  const debtMessage = `Hola ${brand.name}, te escribimos de Agua de Mesa Dos Hermanas. Te recordamos que al día ${formatDateDisplay(todayIso())} quedó un saldo pendiente de ${formatMoney(pending)} por el servicio de llenado de bidones. Gracias.`
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -64,6 +67,19 @@ export function BrandDetail({ brand, fillings }: { brand: Brand; fillings: Filli
           />
         </form>
       </div>
+
+      {pending > 0 && (
+        <Card>
+          <CardContent className="flex flex-col gap-3 p-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <p className="text-sm text-muted-foreground">Saldo pendiente: <span className="font-semibold text-foreground">{formatCurrency(pending)}</span></p>
+            {brand.phone ? (
+              <WhatsAppButton phone={brand.phone} message={debtMessage} />
+            ) : (
+              <p className="text-sm text-warning">Esta marca/revendedor no tiene teléfono cargado.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Metric label="Bidones llenados" value={filledQty.toString()} />

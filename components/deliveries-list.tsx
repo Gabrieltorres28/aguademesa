@@ -6,9 +6,26 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/data"
+import { ExportCsvButton } from "@/components/shared/export-csv-button"
+import { datedFilename, formatDateDisplay, formatMoney } from "@/lib/client/format"
+import type { CsvColumn } from "@/lib/client/csv"
 import { deleteDeliveryAction } from "@/lib/actions/deliveries"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Delivery } from "@/lib/types"
+
+const deliveryColumns: CsvColumn<Delivery>[] = [
+  { header: "Fecha", value: (delivery) => formatDateDisplay(delivery.delivery_date) },
+  { header: "Cliente", value: (delivery) => delivery.own_clients?.name || "Cliente" },
+  { header: "Dirección", value: (delivery) => delivery.own_clients?.address || "" },
+  { header: "Bidones entregados", value: (delivery) => delivery.delivered_qty },
+  { header: "Vacíos devueltos", value: (delivery) => delivery.returned_empty_qty },
+  { header: "Precio unitario", value: (delivery) => formatMoney(delivery.unit_price) },
+  { header: "Total", value: (delivery) => formatMoney(delivery.total_amount) },
+  { header: "Cobrado", value: (delivery) => formatMoney(delivery.paid_amount) },
+  { header: "Pendiente", value: (delivery) => formatMoney(Math.max(Number(delivery.total_amount || 0) - Number(delivery.paid_amount || 0), 0)) },
+  { header: "Estado de pago", value: (delivery) => delivery.payment_status },
+  { header: "Observaciones", value: (delivery) => delivery.notes || "" },
+]
 
 export function DeliveriesList({ deliveries = [], status, error }: { deliveries?: Delivery[]; status?: string; error?: string }) {
   return (
@@ -25,6 +42,10 @@ export function DeliveriesList({ deliveries = [], status, error }: { deliveries?
 
       {status && <StatusMessage text={status} />}
       {error && <ErrorMessage text={error} />}
+
+      <div className="flex justify-end">
+        <ExportCsvButton filename={datedFilename("dos-hermanas-repartos")} columns={deliveryColumns} rows={deliveries} />
+      </div>
 
       <div className="space-y-3">
         {deliveries.map((delivery) => (

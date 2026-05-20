@@ -9,8 +9,21 @@ import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { formatCurrency } from "@/lib/data"
+import { ExportCsvButton } from "@/components/shared/export-csv-button"
+import { datedFilename, formatMoney } from "@/lib/client/format"
+import type { CsvColumn } from "@/lib/client/csv"
 import { deactivateOwnClientAction, deleteOwnClientAction, reactivateOwnClientAction } from "@/lib/actions/deliveries"
 import type { OwnClient } from "@/lib/types"
+
+const clientColumns: CsvColumn<OwnClient>[] = [
+  { header: "Nombre", value: (client) => client.name },
+  { header: "Teléfono", value: (client) => client.phone || "" },
+  { header: "Dirección", value: (client) => client.address || "" },
+  { header: "Estado", value: (client) => (client.is_active !== false ? "Activo" : "Inactivo") },
+  { header: "Bidones en calle", value: (client) => client.bottles_in_street || 0 },
+  { header: "Saldo pendiente", value: (client) => formatMoney(client.balance) },
+  { header: "Notas", value: (client) => client.notes || "" },
+]
 
 export function ClientsList({ clients = [], status, error }: { clients?: OwnClient[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
@@ -59,6 +72,10 @@ export function ClientsList({ clients = [], status, error }: { clients?: OwnClie
             <p className="safe-number text-xl font-bold">{clients.reduce((acc, client) => acc + Number(client.bottles_in_street || 0), 0)}</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex justify-end">
+        <ExportCsvButton filename={datedFilename("dos-hermanas-clientes")} columns={clientColumns} rows={filtered} />
       </div>
 
       <div className="relative">

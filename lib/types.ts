@@ -33,7 +33,7 @@ export interface Filling {
   created_by: string | null
   created_at: string
   updated_at: string
-  brands?: Pick<Brand, "id" | "name">
+  brands?: Pick<Brand, "id" | "name" | "phone">
 }
 
 export interface OwnClient {
@@ -63,7 +63,7 @@ export interface Delivery {
   created_by: string | null
   created_at: string
   updated_at: string
-  own_clients?: Pick<OwnClient, "id" | "name">
+  own_clients?: Pick<OwnClient, "id" | "name" | "phone" | "address">
 }
 
 export interface StockItem {
@@ -89,8 +89,8 @@ export interface CashMovement {
   related_client_id: string | null
   created_by: string | null
   created_at: string
-  brands?: Pick<Brand, "id" | "name"> | null
-  own_clients?: Pick<OwnClient, "id" | "name"> | null
+  brands?: Pick<Brand, "id" | "name" | "phone"> | null
+  own_clients?: Pick<OwnClient, "id" | "name" | "phone" | "address"> | null
 }
 
 export interface AppSettings {

@@ -17,7 +17,7 @@ export async function listCashMovements(): Promise<CashMovement[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("cash_movements")
-    .select("*, brands(id, name), own_clients(id, name)")
+    .select("*, brands(id, name, phone), own_clients(id, name, phone, address)")
     .order("movement_date", { ascending: false })
     .order("created_at", { ascending: false })
   if (error) return []

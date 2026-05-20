@@ -16,9 +16,22 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatCurrency } from "@/lib/data"
+import { ExportCsvButton } from "@/components/shared/export-csv-button"
+import { datedFilename, formatDateDisplay, formatMoney } from "@/lib/client/format"
+import type { CsvColumn } from "@/lib/client/csv"
 import { createCashMovementAction, deleteCashMovementAction, updateCashMovementAction } from "@/lib/actions/cash"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { CashMovement } from "@/lib/types"
+
+const cashColumns: CsvColumn<CashMovement>[] = [
+  { header: "Fecha", value: (movement) => formatDateDisplay(movement.movement_date) },
+  { header: "Tipo", value: (movement) => (movement.type === "INGRESO" ? "Ingreso" : "Gasto") },
+  { header: "Categoría", value: (movement) => movement.category },
+  { header: "Descripción", value: (movement) => movement.description },
+  { header: "Monto", value: (movement) => formatMoney(movement.amount) },
+  { header: "Origen", value: (movement) => movement.own_clients?.name || movement.brands?.name || "Manual" },
+  { header: "Observaciones", value: () => "" },
+]
 
 export function CajaModule({ movements = [], status, error }: { movements?: CashMovement[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
@@ -104,6 +117,10 @@ export function CajaModule({ movements = [], status, error }: { movements?: Cash
         </CardContent>
       </Card>
       
+      <div className="flex justify-end">
+        <ExportCsvButton filename={datedFilename("dos-hermanas-caja")} columns={cashColumns} rows={filterMovimientos(movements)} />
+      </div>
+
       {/* Búsqueda */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -8,12 +8,31 @@ import { Button } from "@/components/ui/button"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import type { Brand } from "@/lib/types"
+import { ExportCsvButton } from "@/components/shared/export-csv-button"
+import { datedFilename, formatMoney } from "@/lib/client/format"
+import type { CsvColumn } from "@/lib/client/csv"
+import type { Brand, Filling } from "@/lib/types"
 import { deactivateBrandAction, deleteBrandAction, reactivateBrandAction } from "@/lib/actions/brands"
 
-export function BrandsList({ brands = [], status, error }: { brands?: Brand[]; status?: string; error?: string }) {
+type BrandWithPending = Brand & { pendingBalance: number }
+
+const brandColumns: CsvColumn<BrandWithPending>[] = [
+  { header: "Nombre", value: (brand) => brand.name },
+  { header: "Teléfono", value: (brand) => brand.phone || "" },
+  { header: "Estado", value: (brand) => (brand.is_active ? "Activa" : "Inactiva") },
+  { header: "Saldo pendiente", value: (brand) => formatMoney(brand.pendingBalance) },
+  { header: "Notas", value: (brand) => brand.notes || "" },
+]
+
+export function BrandsList({ brands = [], fillings = [], status, error }: { brands?: Brand[]; fillings?: Filling[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
-  const filtered = brands.filter(brand => brand.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const brandsWithPending = brands.map((brand) => ({
+    ...brand,
+    pendingBalance: fillings
+      .filter((filling) => filling.brand_id === brand.id)
+      .reduce((acc, filling) => acc + Math.max(Number(filling.total_amount || 0) - Number(filling.paid_amount || 0), 0), 0),
+  }))
+  const filtered = brandsWithPending.filter(brand => brand.name.toLowerCase().includes(searchTerm.toLowerCase()))
   const activeCount = brands.filter(brand => brand.is_active).length
 
   return (
@@ -47,6 +66,10 @@ export function BrandsList({ brands = [], status, error }: { brands?: Brand[]; s
             <p className="safe-number text-xl font-bold">{brands.length}</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex justify-end">
+        <ExportCsvButton filename={datedFilename("dos-hermanas-marcas")} columns={brandColumns} rows={filtered} />
       </div>
 
       <div className="relative">

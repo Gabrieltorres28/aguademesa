@@ -9,9 +9,26 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatCurrency } from "@/lib/data"
+import { ExportCsvButton } from "@/components/shared/export-csv-button"
+import { datedFilename, formatDateDisplay, formatMoney } from "@/lib/client/format"
+import type { CsvColumn } from "@/lib/client/csv"
 import { deleteFillingAction } from "@/lib/actions/fillings"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Brand, Filling } from "@/lib/types"
+
+const fillingColumns: CsvColumn<Filling>[] = [
+  { header: "Fecha", value: (filling) => formatDateDisplay(filling.filling_date) },
+  { header: "Marca / Revendedor", value: (filling) => filling.brands?.name || "Sin marca" },
+  { header: "Bidones recibidos", value: (filling) => filling.received_qty },
+  { header: "Bidones llenados", value: (filling) => filling.filled_qty },
+  { header: "Bidones retirados", value: (filling) => filling.withdrawn_qty },
+  { header: "Precio por unidad", value: (filling) => formatMoney(filling.unit_price) },
+  { header: "Total", value: (filling) => formatMoney(filling.total_amount) },
+  { header: "Cobrado", value: (filling) => formatMoney(filling.paid_amount) },
+  { header: "Pendiente", value: (filling) => formatMoney(Math.max(Number(filling.total_amount || 0) - Number(filling.paid_amount || 0), 0)) },
+  { header: "Estado de pago", value: (filling) => filling.payment_status },
+  { header: "Observaciones", value: (filling) => filling.notes || "" },
+]
 
 export function RepartosList({ fillings = [], brands = [], status, error }: { fillings?: Filling[]; brands?: Brand[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
@@ -72,6 +89,10 @@ export function RepartosList({ fillings = [], brands = [], status, error }: { fi
         </Card>
       </div>
       
+      <div className="flex justify-end">
+        <ExportCsvButton filename={datedFilename("dos-hermanas-llenados")} columns={fillingColumns} rows={filteredLlenados} />
+      </div>
+
       {/* Búsqueda y filtros */}
       <div className="flex flex-col gap-3 md:flex-row">
         <div className="relative flex-1">

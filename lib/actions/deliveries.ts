@@ -184,7 +184,7 @@ export async function listDeliveries(): Promise<Delivery[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("deliveries")
-    .select("*, own_clients(id, name)")
+    .select("*, own_clients(id, name, phone, address)")
     .order("delivery_date", { ascending: false })
   if (error) return []
   return data as Delivery[]
@@ -193,7 +193,7 @@ export async function listDeliveries(): Promise<Delivery[]> {
 export async function getDelivery(id: string): Promise<Delivery | null> {
   if (!hasSupabaseEnv()) return null
   const supabase = await createClient()
-  const { data, error } = await supabase.from("deliveries").select("*, own_clients(id, name)").eq("id", id).single()
+  const { data, error } = await supabase.from("deliveries").select("*, own_clients(id, name, phone, address)").eq("id", id).single()
   if (error) return null
   return data as Delivery
 }
@@ -214,18 +214,22 @@ export async function createDeliveryAction(formData: FormData) {
   }
   if (paidAmount > total) redirect("/repartos/nuevo?error=paid-too-high")
 
-  const { error } = await supabase.from("deliveries").insert({
-    client_id: clientId,
-    delivery_date: stringFromForm(formData, "delivery_date"),
-    product: stringFromForm(formData, "product", "Bidón 20L"),
-    delivered_qty: deliveredQty,
-    returned_empty_qty: returnedEmptyQty,
-    unit_price: unitPrice,
-    paid_amount: paidAmount,
-    payment_status: calculatePaymentStatus(paidAmount, total),
-    notes: stringFromForm(formData, "notes") || null,
-    created_by: user.id,
-  })
+  const { data, error } = await supabase
+    .from("deliveries")
+    .insert({
+      client_id: clientId,
+      delivery_date: stringFromForm(formData, "delivery_date"),
+      product: stringFromForm(formData, "product", "Bidón 20L"),
+      delivered_qty: deliveredQty,
+      returned_empty_qty: returnedEmptyQty,
+      unit_price: unitPrice,
+      paid_amount: paidAmount,
+      payment_status: calculatePaymentStatus(paidAmount, total),
+      notes: stringFromForm(formData, "notes") || null,
+      created_by: user.id,
+    })
+    .select("id")
+    .single()
 
   if (error) redirect(`/repartos/nuevo?error=${encodeURIComponent(error.message)}`)
 
@@ -250,7 +254,7 @@ export async function createDeliveryAction(formData: FormData) {
   revalidatePath("/clientes")
   revalidatePath("/repartos")
   revalidatePath("/caja")
-  redirect("/repartos")
+  redirect(`/repartos/${data.id}?created=1`)
 }
 
 export async function updateDeliveryAction(formData: FormData) {

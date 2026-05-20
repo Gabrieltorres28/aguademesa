@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/data"
+import { WhatsAppButton } from "@/components/shared/whatsapp-button"
+import { formatDateDisplay, formatMoney, todayIso } from "@/lib/client/format"
 import { deactivateOwnClientAction, deleteOwnClientAction, reactivateOwnClientAction } from "@/lib/actions/deliveries"
 import type { Delivery, OwnClient } from "@/lib/types"
 
@@ -21,6 +23,8 @@ export function ClientDetail({
 }) {
   const clientDeliveries = deliveries.filter((delivery) => delivery.client_id === client.id)
   const paidTotal = clientDeliveries.reduce((acc, delivery) => acc + Number(delivery.paid_amount || 0), 0)
+  const pendingBalance = Number(client.balance || 0)
+  const debtMessage = `Hola ${client.name}, te escribimos de Agua de Mesa Dos Hermanas. Te recordamos que al día ${formatDateDisplay(todayIso())} tenés un saldo pendiente de ${formatMoney(pendingBalance)}. Cuando puedas, podés regularizarlo. Gracias.`
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -72,6 +76,19 @@ export function ClientDetail({
 
       {created && <StatusMessage text="Cliente creado correctamente." />}
       {updated && <StatusMessage text="Cliente actualizado correctamente." />}
+
+      {pendingBalance > 0 && (
+        <Card>
+          <CardContent className="flex flex-col gap-3 p-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <p className="text-sm text-muted-foreground">Saldo pendiente: <span className="font-semibold text-foreground">{formatCurrency(pendingBalance)}</span></p>
+            {client.phone ? (
+              <WhatsAppButton phone={client.phone} message={debtMessage} />
+            ) : (
+              <p className="text-sm text-warning">Este cliente no tiene teléfono cargado.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Card>

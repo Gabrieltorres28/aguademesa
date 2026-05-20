@@ -17,7 +17,7 @@ export async function listFillings(): Promise<Filling[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("fillings")
-    .select("*, brands(id, name)")
+    .select("*, brands(id, name, phone)")
     .order("filling_date", { ascending: false })
     .order("created_at", { ascending: false })
   if (error) return []
@@ -27,7 +27,7 @@ export async function listFillings(): Promise<Filling[]> {
 export async function getFilling(id: string): Promise<Filling | null> {
   if (!hasSupabaseEnv()) return null
   const supabase = await createClient()
-  const { data, error } = await supabase.from("fillings").select("*, brands(id, name)").eq("id", id).single()
+  const { data, error } = await supabase.from("fillings").select("*, brands(id, name, phone)").eq("id", id).single()
   if (error) return null
   return data as Filling
 }
@@ -83,7 +83,7 @@ export async function createFillingAction(formData: FormData) {
   revalidatePath("/")
   revalidatePath("/llenados")
   revalidatePath("/caja")
-  redirect(`/llenados/${data.id}`)
+  redirect(`/llenados/${data.id}?created=1`)
 }
 
 export async function updateFillingAction(formData: FormData) {

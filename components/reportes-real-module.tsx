@@ -5,7 +5,18 @@ import { ArrowLeft, BarChart3, DollarSign, Droplets, Package, Truck } from "luci
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/data"
+import { ExportCsvButton } from "@/components/shared/export-csv-button"
+import { datedFilename } from "@/lib/client/format"
+import type { CsvColumn } from "@/lib/client/csv"
 import type { Brand, CashMovement, Delivery, Filling, OwnClient, StockItem } from "@/lib/types"
+
+type ReportRow = { seccion: string; indicador: string; valor: string }
+
+const reportColumns: CsvColumn<ReportRow>[] = [
+  { header: "Sección", value: (row) => row.seccion },
+  { header: "Indicador", value: (row) => row.indicador },
+  { header: "Valor", value: (row) => row.valor },
+]
 
 export function ReportesRealModule({
   brands = [],
@@ -37,6 +48,21 @@ export function ReportesRealModule({
   const ingresosMes = movementsMonth.filter((item) => item.type === "INGRESO").reduce((acc, item) => acc + Number(item.amount || 0), 0)
   const egresosMes = movementsMonth.filter((item) => item.type === "EGRESO").reduce((acc, item) => acc + Number(item.amount || 0), 0)
   const stockCritico = stockItems.filter((item) => Number(item.current_stock) <= Number(item.min_stock))
+  const reportRows: ReportRow[] = [
+    { seccion: "Reparto propio", indicador: "Repartos cargados", valor: deliveries.length.toString() },
+    { seccion: "Reparto propio", indicador: "Bidones entregados", valor: deliveredQty.toString() },
+    { seccion: "Reparto propio", indicador: "Bidones en calle", valor: streetBottles.toString() },
+    { seccion: "Reparto propio", indicador: "Saldo de clientes", valor: formatCurrency(clientDebt) },
+    { seccion: "Llenados", indicador: "Llenados cargados", valor: fillings.length.toString() },
+    { seccion: "Llenados", indicador: "Bidones llenados", valor: filledQty.toString() },
+    { seccion: "Llenados", indicador: "Saldo de marcas", valor: formatCurrency(brandDebt) },
+    { seccion: "Caja", indicador: "Ingresos del día", valor: formatCurrency(ingresosDia) },
+    { seccion: "Caja", indicador: "Gastos del día", valor: formatCurrency(egresosDia) },
+    { seccion: "Caja", indicador: "Balance del mes", valor: formatCurrency(ingresosMes - egresosMes) },
+    { seccion: "Stock", indicador: "Items cargados", valor: stockItems.length.toString() },
+    { seccion: "Stock", indicador: "Stock crítico", valor: stockCritico.length.toString() },
+  ]
+
   const fillingsByBrand = brands
     .map((brand) => {
       const brandFillings = fillings.filter((item) => item.brand_id === brand.id)
@@ -62,6 +88,10 @@ export function ReportesRealModule({
           <h1 className="text-2xl font-bold text-foreground">Reportes</h1>
           <p className="text-sm text-muted-foreground">Reparto propio, llenados, caja y stock.</p>
         </div>
+      </div>
+
+      <div className="flex justify-end">
+        <ExportCsvButton filename={datedFilename("dos-hermanas-reporte-general")} columns={reportColumns} rows={reportRows} />
       </div>
 
       <ReportSection title="Reportes de reparto propio" icon={Truck}>

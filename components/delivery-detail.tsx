@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/data"
+import { WhatsAppButton } from "@/components/shared/whatsapp-button"
+import { formatDateDisplay, formatMoney, todayIso } from "@/lib/client/format"
 import { deleteDeliveryAction } from "@/lib/actions/deliveries"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Delivery } from "@/lib/types"
@@ -21,6 +23,8 @@ export function DeliveryDetail({ delivery }: { delivery?: Delivery | null }) {
   const paid = Number(delivery.paid_amount || 0)
   const pending = Math.max(total - paid, 0)
   const bottlesDelta = Number(delivery.delivered_qty || 0) - Number(delivery.returned_empty_qty || 0)
+  const clientName = delivery.own_clients?.name || "Cliente"
+  const debtMessage = `Hola ${clientName}, te escribimos de Agua de Mesa Dos Hermanas. Te recordamos que al día ${formatDateDisplay(todayIso())} tenés un saldo pendiente de ${formatMoney(pending)}. Cuando puedas, podés regularizarlo. Gracias.`
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -51,7 +55,14 @@ export function DeliveryDetail({ delivery }: { delivery?: Delivery | null }) {
           <input type="hidden" name="id" value={delivery.id} />
           <DeleteSubmitButton />
         </form>
+        {pending > 0 && delivery.own_clients?.phone && (
+          <WhatsAppButton phone={delivery.own_clients.phone} message={debtMessage} label="Enviar WhatsApp de deuda" />
+        )}
       </div>
+
+      {pending > 0 && !delivery.own_clients?.phone && (
+        <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">Este cliente no tiene teléfono cargado.</div>
+      )}
 
       <Card>
         <CardHeader className="pb-2">

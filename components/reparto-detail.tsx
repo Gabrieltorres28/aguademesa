@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/data"
+import { WhatsAppButton } from "@/components/shared/whatsapp-button"
+import { formatDateDisplay, formatMoney, todayIso } from "@/lib/client/format"
 import { deleteFillingAction, registerFillingPaymentAction } from "@/lib/actions/fillings"
 import { DeleteSubmitButton } from "@/components/delete-submit-button"
 import type { Filling } from "@/lib/types"
@@ -32,6 +34,9 @@ export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { fil
   const nextPaid = Number(paymentAmount) || 0
   const nextPending = Math.max(totalAmount - nextPaid, 0)
   const nextStatus = nextPaid >= totalAmount && totalAmount > 0 ? "PAGADO" : nextPaid > 0 ? "PARCIAL" : "PENDIENTE"
+  const pending = Math.max(totalAmount - currentPaid, 0)
+  const brandName = llenado.brands?.name || "Marca / revendedor"
+  const debtMessage = `Hola ${brandName}, te escribimos de Agua de Mesa Dos Hermanas. Te recordamos que al día ${formatDateDisplay(todayIso())} quedó un saldo pendiente de ${formatMoney(pending)} por el servicio de llenado de bidones. Gracias.`
   
   return (
     <div className="p-4 md:p-6 space-y-4">
@@ -69,7 +74,14 @@ export function RepartoDetail({ repartoId, filling }: RepartoDetailProps & { fil
           <input type="hidden" name="id" value={llenado.id} />
           <DeleteSubmitButton />
         </form>
+        {pending > 0 && llenado.brands?.phone && (
+          <WhatsAppButton phone={llenado.brands.phone} message={debtMessage} label="Enviar WhatsApp de deuda" />
+        )}
       </div>
+
+      {pending > 0 && !llenado.brands?.phone && (
+        <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">Esta marca/revendedor no tiene teléfono cargado.</div>
+      )}
       
       {/* Info principal */}
       <Card>
