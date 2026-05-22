@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { createOwnClientAction, deactivateOwnClientAction, deleteOwnClientAction, reactivateOwnClientAction, updateOwnClientAction } from "@/lib/actions/deliveries"
+import { clientSectors, clientTypeOptions, habitualDayOptions } from "@/lib/client/client-segments"
 import type { OwnClient } from "@/lib/types"
 
 export function ClientForm({
@@ -54,8 +55,38 @@ export function ClientForm({
               <Input id="phone" name="phone" defaultValue={client?.phone || ""} placeholder="Teléfono o WhatsApp" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="address">Dirección</Label>
+              <Label htmlFor="address">Dirección o referencia</Label>
               <Input id="address" name="address" defaultValue={client?.address || ""} placeholder="Calle, número, referencia" />
+            </div>
+            <div className="grid gap-4 min-[520px]:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="sector">Sector</Label>
+                <select id="sector" name="sector" defaultValue={client?.sector || "Otros"} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  {clientSectors.map((sector) => <option key={sector} value={sector}>{sector}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="client_type">Tipo de cliente</Label>
+                <select id="client_type" name="client_type" defaultValue={client?.client_type || "fijo"} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  {clientTypeOptions.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="delivery_group">Grupo</Label>
+              <Input id="delivery_group" name="delivery_group" defaultValue={client?.delivery_group || ""} placeholder="Facultad, oficina, punto de entrega..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Día habitual</Label>
+              <div className="grid gap-2 min-[420px]:grid-cols-2">
+                {habitualDayOptions.map((day) => (
+                  <label key={day.value} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                    <input name="habitual_days" type="checkbox" value={day.value} defaultChecked={client?.habitual_days?.includes(day.value)} className="h-4 w-4" />
+                    <span>{day.label}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">Sirve como sugerencia para el recorrido; el pedido real lleva fecha.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notas</Label>

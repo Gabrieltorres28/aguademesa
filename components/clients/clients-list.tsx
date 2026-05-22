@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import Link from "next/link"
 import { Edit, MapPin, Plus, Search, UserRound } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { formatCurrency } from "@/lib/data"
 import { ExportCsvButton } from "@/components/shared/export-csv-button"
 import { datedFilename, formatMoney } from "@/lib/client/format"
+import { clientSectors, clientTypeLabel, habitualDayLabel, habitualDayOptions } from "@/lib/client/client-segments"
 import type { CsvColumn } from "@/lib/client/csv"
 import { deactivateOwnClientAction, deleteOwnClientAction, reactivateOwnClientAction } from "@/lib/actions/deliveries"
 import type { OwnClient } from "@/lib/types"
@@ -19,6 +20,10 @@ const clientColumns: CsvColumn<OwnClient>[] = [
   { header: "Nombre", value: (client) => client.name },
   { header: "Teléfono", value: (client) => client.phone || "" },
   { header: "Dirección", value: (client) => client.address || "" },
+  { header: "Sector", value: (client) => client.sector || "Otros" },
+  { header: "Grupo", value: (client) => client.delivery_group || "" },
+  { header: "Días habituales", value: (client) => (client.habitual_days || []).map(habitualDayLabel).join(", ") },
+  { header: "Tipo", value: (client) => clientTypeLabel(client.client_type) },
   { header: "Estado", value: (client) => (client.is_active !== false ? "Activo" : "Inactivo") },
   { header: "Bidones en calle", value: (client) => client.bottles_in_street || 0 },
   { header: "Saldo pendiente", value: (client) => formatMoney(client.balance) },
@@ -27,10 +32,22 @@ const clientColumns: CsvColumn<OwnClient>[] = [
 
 export function ClientsList({ clients = [], status, error }: { clients?: OwnClient[]; status?: string; error?: string }) {
   const [searchTerm, setSearchTerm] = useState("")
+  const [sector, setSector] = useState("todos")
+  const [day, setDay] = useState("todos")
+  const [group, setGroup] = useState("todos")
+  const [quickFilter, setQuickFilter] = useState("todos")
   const query = searchTerm.trim().toLowerCase()
+  const groups = Array.from(new Set(clients.map((client) => client.delivery_group).filter(Boolean))).sort() as string[]
   const filtered = clients.filter((client) => {
-    if (!query) return true
-    return [client.name, client.phone, client.address].some((value) => value?.toLowerCase().includes(query))
+    const matchesSearch = !query || [client.name, client.phone, client.address, client.sector, client.delivery_group].some((value) => value?.toLowerCase().includes(query))
+    const matchesSector = sector === "todos" || (client.sector || "Otros") === sector
+    const matchesDay = day === "todos" || (client.habitual_days || []).includes(day as never)
+    const matchesGroup = group === "todos" || client.delivery_group === group
+    const matchesQuickFilter = quickFilter === "todos"
+      || (quickFilter === "deuda" && Number(client.balance) > 0)
+      || (quickFilter === "activos" && client.is_active !== false)
+      || (quickFilter === "ocasionales" && client.client_type === "ocasional")
+    return matchesSearch && matchesSector && matchesDay && matchesGroup && matchesQuickFilter
   })
   const activeCount = clients.filter((client) => client.is_active !== false).length
   const debtCount = clients.filter((client) => Number(client.balance) > 0).length
@@ -78,14 +95,36 @@ export function ClientsList({ clients = [], status, error }: { clients?: OwnClie
         <ExportCsvButton filename={datedFilename("dos-hermanas-clientes")} columns={clientColumns} rows={filtered} />
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Buscar por nombre, teléfono o dirección..."
-          className="pl-10"
-        />
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar por nombre, teléfono o dirección..."
+            className="pl-10"
+          />
+        </div>
+        <div className="grid gap-2 min-[420px]:grid-cols-2 lg:grid-cols-4">
+          <FilterSelect label="Sector" value={sector} onChange={setSector}>
+            <option value="todos">Todos los sectores</option>
+            {clientSectors.map((option) => <option key={option} value={option}>{option}</option>)}
+          </FilterSelect>
+          <FilterSelect label="Día habitual" value={day} onChange={setDay}>
+            <option value="todos">Todos los días</option>
+            {habitualDayOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </FilterSelect>
+          <FilterSelect label="Grupo" value={group} onChange={setGroup}>
+            <option value="todos">Todos los grupos</option>
+            {groups.map((option) => <option key={option} value={option}>{option}</option>)}
+          </FilterSelect>
+          <FilterSelect label="Ver" value={quickFilter} onChange={setQuickFilter}>
+            <option value="todos">Todos</option>
+            <option value="deuda">Con deuda</option>
+            <option value="activos">Activos</option>
+            <option value="ocasionales">Ocasionales</option>
+          </FilterSelect>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -104,6 +143,12 @@ export function ClientsList({ clients = [], status, error }: { clients?: OwnClie
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">{client.phone || "Sin teléfono"}</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className="text-[10px]">{client.sector || "Otros"}</Badge>
+                      {client.delivery_group && <Badge variant="secondary" className="text-[10px]">Grupo: {client.delivery_group}</Badge>}
+                      <Badge variant="outline" className="text-[10px]">{clientTypeLabel(client.client_type)}</Badge>
+                      {(client.habitual_days || []).map((habitualDay) => <Badge key={habitualDay} variant="outline" className="text-[10px]">{habitualDayLabel(habitualDay)}</Badge>)}
+                    </div>
                     {client.address && (
                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                         <MapPin className="h-3 w-3" />
@@ -187,6 +232,17 @@ export function ClientsList({ clients = [], status, error }: { clients?: OwnClie
   )
 }
 
+
+function FilterSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
+  return (
+    <label className="space-y-1 text-xs text-muted-foreground">
+      <span>{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground">
+        {children}
+      </select>
+    </label>
+  )
+}
 
 function StatusMessage({ text }: { text: string }) {
   return <div className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">{text}</div>

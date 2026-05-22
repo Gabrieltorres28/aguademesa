@@ -1,6 +1,10 @@
 export type Role = "ADMIN" | "OPERATOR"
 export type PaymentStatus = "PAGADO" | "PENDIENTE" | "PARCIAL"
 export type CashMovementType = "INGRESO" | "EGRESO"
+export type ClientSector = "Barrio Sur" | "Barrio Norte" | "Centro" | "Facultad" | "Otros"
+export type ClientType = "fijo" | "ocasional" | "whatsapp" | "institucion_grupo"
+export type HabitualDay = "lunes" | "martes" | "miercoles" | "jueves" | "viernes" | "sabado" | "domingo"
+export type OrderStatus = "PENDIENTE" | "ENTREGADO" | "CANCELADO"
 
 export interface Profile {
   id: string
@@ -41,6 +45,10 @@ export interface OwnClient {
   name: string
   phone: string | null
   address: string | null
+  sector: ClientSector
+  delivery_group: string | null
+  habitual_days: HabitualDay[]
+  client_type: ClientType
   bottles_in_street: number
   balance: number
   notes: string | null
@@ -64,6 +72,20 @@ export interface Delivery {
   created_at: string
   updated_at: string
   own_clients?: Pick<OwnClient, "id" | "name" | "phone" | "address">
+}
+
+export interface ClientOrder {
+  id: string
+  client_id: string
+  order_date: string
+  product: string
+  quantity: number
+  status: OrderStatus
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  own_clients?: Pick<OwnClient, "id" | "name" | "phone" | "address" | "sector" | "delivery_group" | "habitual_days" | "client_type">
 }
 
 export interface StockItem {

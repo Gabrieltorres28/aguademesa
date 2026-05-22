@@ -38,6 +38,10 @@ create table if not exists public.own_clients (
   name text not null,
   phone text,
   address text,
+  sector text not null default 'Otros' check (sector in ('Barrio Sur', 'Barrio Norte', 'Centro', 'Facultad', 'Otros')),
+  delivery_group text,
+  habitual_days text[] not null default '{}' check (habitual_days <@ array['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']),
+  client_type text not null default 'fijo' check (client_type in ('fijo', 'ocasional', 'whatsapp', 'institucion_grupo')),
   bottles_in_street integer not null default 0 check (bottles_in_street >= 0),
   balance numeric(12,2) not null default 0,
   notes text,
@@ -47,6 +51,12 @@ create table if not exists public.own_clients (
 
 alter table public.own_clients
 add column if not exists is_active boolean not null default true;
+
+alter table public.own_clients
+add column if not exists sector text not null default 'Otros',
+add column if not exists delivery_group text,
+add column if not exists habitual_days text[] not null default '{}',
+add column if not exists client_type text not null default 'fijo';
 
 create table if not exists public.deliveries (
   id uuid primary key default gen_random_uuid(),
@@ -59,6 +69,19 @@ create table if not exists public.deliveries (
   total_amount numeric(12,2) generated always as (delivered_qty * unit_price) stored,
   paid_amount numeric(12,2) not null default 0 check (paid_amount >= 0),
   payment_status text not null default 'PENDIENTE' check (payment_status in ('PAGADO', 'PENDIENTE', 'PARCIAL')),
+  notes text,
+  created_by uuid references public.profiles(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.orders (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.own_clients(id) on delete restrict,
+  order_date date not null,
+  product text not null default 'Bidón 20L',
+  quantity integer not null default 1 check (quantity > 0),
+  status text not null default 'PENDIENTE' check (status in ('PENDIENTE', 'ENTREGADO', 'CANCELADO')),
   notes text,
   created_by uuid references public.profiles(id),
   created_at timestamptz not null default now(),
@@ -118,6 +141,11 @@ create trigger set_deliveries_updated_at
 before update on public.deliveries
 for each row execute function public.set_updated_at();
 
+drop trigger if exists set_orders_updated_at on public.orders;
+create trigger set_orders_updated_at
+before update on public.orders
+for each row execute function public.set_updated_at();
+
 drop trigger if exists set_stock_items_updated_at on public.stock_items;
 create trigger set_stock_items_updated_at
 before update on public.stock_items
@@ -147,6 +175,7 @@ alter table public.brands enable row level security;
 alter table public.fillings enable row level security;
 alter table public.own_clients enable row level security;
 alter table public.deliveries enable row level security;
+alter table public.orders enable row level security;
 alter table public.stock_items enable row level security;
 alter table public.cash_movements enable row level security;
 alter table public.settings enable row level security;
@@ -185,6 +214,11 @@ create policy "authenticated read deliveries" on public.deliveries for select to
 create policy "authenticated write deliveries" on public.deliveries for insert to authenticated with check (true);
 create policy "authenticated update deliveries" on public.deliveries for update to authenticated using (true) with check (true);
 create policy "authenticated delete deliveries" on public.deliveries for delete to authenticated using (true);
+
+create policy "authenticated read orders" on public.orders for select to authenticated using (true);
+create policy "authenticated write orders" on public.orders for insert to authenticated with check (true);
+create policy "authenticated update orders" on public.orders for update to authenticated using (true) with check (true);
+create policy "authenticated delete orders" on public.orders for delete to authenticated using (true);
 
 create policy "authenticated read stock_items" on public.stock_items for select to authenticated using (true);
 create policy "authenticated write stock_items" on public.stock_items for insert to authenticated with check (true);

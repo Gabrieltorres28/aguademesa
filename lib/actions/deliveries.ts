@@ -7,8 +7,10 @@ import { hasSupabaseEnv } from "@/lib/supabase/config"
 import { calculatePaymentStatus, numberFromForm, requireSupabase, stringFromForm } from "./utils"
 import type { Delivery, OwnClient } from "@/lib/types"
 
-function isMissingOwnClientActiveColumn(error: { message?: string } | null) {
-  return Boolean(error?.message?.includes("'is_active'") || error?.message?.includes("is_active"))
+const clientProfileColumns = ["is_active", "sector", "delivery_group", "habitual_days", "client_type"]
+
+function isMissingOwnClientProfileColumn(error: { message?: string } | null) {
+  return clientProfileColumns.some((column) => error?.message?.includes(column))
 }
 
 function isForeignKeyError(error: { code?: string; message?: string } | null) {
@@ -28,6 +30,15 @@ export async function listOwnClients(): Promise<OwnClient[]> {
   return data as OwnClient[]
 }
 
+function clientProfilePayload(formData: FormData) {
+  return {
+    sector: stringFromForm(formData, "sector", "Otros"),
+    delivery_group: stringFromForm(formData, "delivery_group") || null,
+    habitual_days: formData.getAll("habitual_days").map((day) => String(day)),
+    client_type: stringFromForm(formData, "client_type", "fijo"),
+  }
+}
+
 export async function createOwnClientAction(formData: FormData) {
   const { supabase } = await requireSupabase()
   const name = stringFromForm(formData, "name")
@@ -37,6 +48,7 @@ export async function createOwnClientAction(formData: FormData) {
     name,
     phone: stringFromForm(formData, "phone") || null,
     address: stringFromForm(formData, "address") || null,
+    ...clientProfilePayload(formData),
     notes: stringFromForm(formData, "notes") || null,
   }
 
@@ -49,8 +61,9 @@ export async function createOwnClientAction(formData: FormData) {
     .select()
     .single()
 
-  if (isMissingOwnClientActiveColumn(error)) {
-    const retry = await supabase.from("own_clients").insert(payload).select().single()
+  if (isMissingOwnClientProfileColumn(error)) {
+    const legacyPayload = { name: payload.name, phone: payload.phone, address: payload.address, notes: payload.notes }
+    const retry = await supabase.from("own_clients").insert(legacyPayload).select().single()
     data = retry.data
     error = retry.error
   }
@@ -59,6 +72,7 @@ export async function createOwnClientAction(formData: FormData) {
   revalidatePath("/")
   revalidatePath("/clientes")
   revalidatePath("/repartos")
+  revalidatePath("/recorrido")
   redirect(`/clientes/${data.id}?created=1`)
 }
 
@@ -72,6 +86,7 @@ export async function updateOwnClientAction(formData: FormData) {
     name,
     phone: stringFromForm(formData, "phone") || null,
     address: stringFromForm(formData, "address") || null,
+    ...clientProfilePayload(formData),
     notes: stringFromForm(formData, "notes") || null,
   }
 
@@ -83,8 +98,9 @@ export async function updateOwnClientAction(formData: FormData) {
     })
     .eq("id", id)
 
-  if (isMissingOwnClientActiveColumn(error)) {
-    const retry = await supabase.from("own_clients").update(payload).eq("id", id)
+  if (isMissingOwnClientProfileColumn(error)) {
+    const legacyPayload = { name: payload.name, phone: payload.phone, address: payload.address, notes: payload.notes }
+    const retry = await supabase.from("own_clients").update(legacyPayload).eq("id", id)
     error = retry.error
   }
 
@@ -93,6 +109,7 @@ export async function updateOwnClientAction(formData: FormData) {
   revalidatePath("/clientes")
   revalidatePath(`/clientes/${id}`)
   revalidatePath("/repartos")
+  revalidatePath("/recorrido")
   redirect(`/clientes/${id}?updated=1`)
 }
 
@@ -102,7 +119,7 @@ export async function deactivateOwnClientAction(formData: FormData) {
   if (!id) redirect("/clientes")
 
   const { error } = await supabase.from("own_clients").update({ is_active: false }).eq("id", id)
-  if (isMissingOwnClientActiveColumn(error)) {
+  if (isMissingOwnClientProfileColumn(error)) {
     redirect(`/clientes/${id}/editar?error=${encodeURIComponent("Para desactivar clientes, primero ejecutá la migración de is_active en Supabase.")}`)
   }
   if (error) {
@@ -113,6 +130,7 @@ export async function deactivateOwnClientAction(formData: FormData) {
   revalidatePath("/clientes")
   revalidatePath(`/clientes/${id}`)
   revalidatePath("/repartos")
+  revalidatePath("/recorrido")
   redirect("/clientes?deactivated=1")
 }
 
@@ -130,6 +148,7 @@ export async function reactivateOwnClientAction(formData: FormData) {
   revalidatePath("/clientes")
   revalidatePath(`/clientes/${id}`)
   revalidatePath("/repartos")
+  revalidatePath("/recorrido")
   redirect("/clientes?reactivated=1")
 }
 

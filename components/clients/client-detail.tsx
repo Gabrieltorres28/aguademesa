@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/data"
 import { WhatsAppButton } from "@/components/shared/whatsapp-button"
 import { formatDateDisplay, formatMoney, todayIso } from "@/lib/client/format"
+import { clientTypeLabel, habitualDayLabel } from "@/lib/client/client-segments"
 import { deactivateOwnClientAction, deleteOwnClientAction, reactivateOwnClientAction } from "@/lib/actions/deliveries"
 import type { Delivery, OwnClient } from "@/lib/types"
 
@@ -124,6 +125,10 @@ export function ClientDetail({
         <CardContent className="grid gap-3 text-sm min-[520px]:grid-cols-2">
           <Info label="Teléfono" value={client.phone || "Sin teléfono"} />
           <Info label="Dirección" value={client.address || "Sin dirección"} />
+          <Info label="Sector" value={client.sector || "Otros"} />
+          <Info label="Grupo" value={client.delivery_group || "Sin grupo"} />
+          <Info label="Día habitual" value={(client.habitual_days || []).map(habitualDayLabel).join(", ") || "Sin día habitual"} />
+          <Info label="Tipo" value={clientTypeLabel(client.client_type)} />
           <Info label="Estado" value={client.is_active !== false ? "Activo" : "Inactivo"} />
           <Info label="Notas" value={client.notes || "Sin notas"} />
         </CardContent>
