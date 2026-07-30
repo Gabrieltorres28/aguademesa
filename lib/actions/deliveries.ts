@@ -8,6 +8,21 @@ import { calculatePaymentStatus, numberFromForm, requireSupabase, stringFromForm
 import type { Delivery, OwnClient } from "@/lib/types"
 
 const clientProfileColumns = ["is_active", "sector", "delivery_group", "habitual_days", "client_type"]
+const ownClientSelect = [
+  "id",
+  "name",
+  "phone",
+  "address",
+  "sector",
+  "delivery_group",
+  "habitual_days",
+  "client_type",
+  "bottles_in_street",
+  "balance",
+  "notes",
+  "is_active",
+  "created_at",
+].join(",")
 
 function isMissingOwnClientProfileColumn(error: { message?: string } | null) {
   return clientProfileColumns.some((column) => error?.message?.includes(column))
@@ -15,7 +30,7 @@ function isMissingOwnClientProfileColumn(error: { message?: string } | null) {
 
 function ownClientWriteError(error: { message?: string } | null) {
   if (isMissingOwnClientProfileColumn(error)) {
-    return "La base de datos no tiene todas las columnas del perfil del cliente. Ejecutá supabase/schema.sql antes de volver a guardar."
+    return "La base de datos no tiene todas las columnas del perfil del cliente. Aplicá la migración supabase/migrations/20260730_add_own_client_profile_columns.sql antes de volver a guardar."
   }
 
   return error?.message || "No se pudo guardar el cliente."
@@ -33,8 +48,11 @@ function isDeleteBlockedByPolicy(error: { code?: string; message?: string } | nu
 export async function listOwnClients(): Promise<OwnClient[]> {
   if (!hasSupabaseEnv()) return []
   const supabase = await createClient()
-  const { data, error } = await supabase.from("own_clients").select("*").order("name")
-  if (error) return []
+  const { data, error } = await supabase.from("own_clients").select(ownClientSelect).order("name")
+  if (error) {
+    console.error("Error listing own clients", error)
+    throw new Error(ownClientWriteError(error))
+  }
   return data as OwnClient[]
 }
 
@@ -197,8 +215,12 @@ export async function deleteOwnClientAction(formData: FormData) {
 export async function getOwnClient(id: string): Promise<OwnClient | null> {
   if (!hasSupabaseEnv()) return null
   const supabase = await createClient()
-  const { data, error } = await supabase.from("own_clients").select("*").eq("id", id).single()
-  if (error) return null
+  const { data, error } = await supabase.from("own_clients").select(ownClientSelect).eq("id", id).single()
+  if (error) {
+    console.error("Error getting own client", { id, error })
+    if (isMissingOwnClientProfileColumn(error)) throw new Error(ownClientWriteError(error))
+    return null
+  }
   return data as OwnClient
 }
 
