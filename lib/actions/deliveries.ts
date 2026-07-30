@@ -13,6 +13,14 @@ function isMissingOwnClientProfileColumn(error: { message?: string } | null) {
   return clientProfileColumns.some((column) => error?.message?.includes(column))
 }
 
+function ownClientWriteError(error: { message?: string } | null) {
+  if (isMissingOwnClientProfileColumn(error)) {
+    return "La base de datos no tiene todas las columnas del perfil del cliente. Ejecutá supabase/schema.sql antes de volver a guardar."
+  }
+
+  return error?.message || "No se pudo guardar el cliente."
+}
+
 function isForeignKeyError(error: { code?: string; message?: string } | null) {
   return Boolean(error?.code === "23503" || error?.message?.toLowerCase().includes("foreign key"))
 }
@@ -52,7 +60,7 @@ export async function createOwnClientAction(formData: FormData) {
     notes: stringFromForm(formData, "notes") || null,
   }
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("own_clients")
     .insert({
       ...payload,
@@ -61,14 +69,10 @@ export async function createOwnClientAction(formData: FormData) {
     .select()
     .single()
 
-  if (isMissingOwnClientProfileColumn(error)) {
-    const legacyPayload = { name: payload.name, phone: payload.phone, address: payload.address, notes: payload.notes }
-    const retry = await supabase.from("own_clients").insert(legacyPayload).select().single()
-    data = retry.data
-    error = retry.error
+  if (error || !data) {
+    console.error("Error creating own client", error)
+    redirect("/clientes/nuevo?error=" + encodeURIComponent(ownClientWriteError(error)))
   }
-
-  if (error) redirect(`/clientes/nuevo?error=${encodeURIComponent(error.message)}`)
   revalidatePath("/")
   revalidatePath("/clientes")
   revalidatePath("/repartos")
@@ -90,24 +94,24 @@ export async function updateOwnClientAction(formData: FormData) {
     notes: stringFromForm(formData, "notes") || null,
   }
 
-  let { error } = await supabase
+  const { data: updatedClient, error } = await supabase
     .from("own_clients")
     .update({
       ...payload,
       is_active: formData.get("is_active") === "on",
     })
     .eq("id", id)
+    .select("id")
+    .single()
 
-  if (isMissingOwnClientProfileColumn(error)) {
-    const legacyPayload = { name: payload.name, phone: payload.phone, address: payload.address, notes: payload.notes }
-    const retry = await supabase.from("own_clients").update(legacyPayload).eq("id", id)
-    error = retry.error
+  if (error || !updatedClient) {
+    console.error("Error updating own client", { id, error })
+    redirect("/clientes/" + id + "/editar?error=" + encodeURIComponent(ownClientWriteError(error)))
   }
-
-  if (error) redirect(`/clientes/${id}/editar?error=${encodeURIComponent(error.message)}`)
   revalidatePath("/")
   revalidatePath("/clientes")
   revalidatePath(`/clientes/${id}`)
+  revalidatePath(`/clientes/${id}/editar`)
   revalidatePath("/repartos")
   revalidatePath("/recorrido")
   redirect(`/clientes/${id}?updated=1`)
